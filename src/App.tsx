@@ -52,7 +52,7 @@ import Markdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { ai } from './services/geminiService';
+import { getGeminiAI } from './services/geminiService';
 import { FREE_MODELS, generateOpenRouterContent, fetchFreeModels, type OpenRouterModel } from './services/openRouterService';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -369,6 +369,8 @@ export default function App() {
   const [newMcpUrl, setNewMcpUrl] = useState('');
   const [editorFontSize, setEditorFontSize] = useState(14);
   const [aiProvider, setAiProvider] = useState<'gemini' | 'openrouter'>('gemini');
+  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('aura_gemini_key') || process.env.GEMINI_API_KEY || '');
+  const [openRouterApiKey, setOpenRouterApiKey] = useState(() => localStorage.getItem('aura_openrouter_key') || process.env.OPENROUTER_API_KEY || '');
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
   const [openRouterModel, setOpenRouterModel] = useState('auto-free');
   const [dynamicFreeModels, setDynamicFreeModels] = useState<OpenRouterModel[]>(FREE_MODELS);
@@ -388,6 +390,14 @@ export default function App() {
   const [zenMode, setZenMode] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    localStorage.setItem('aura_gemini_key', geminiApiKey);
+  }, [geminiApiKey]);
+
+  useEffect(() => {
+    localStorage.setItem('aura_openrouter_key', openRouterApiKey);
+  }, [openRouterApiKey]);
 
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
@@ -509,13 +519,15 @@ export default function App() {
 
       let resultText = '';
       if (aiProvider === 'gemini') {
+        const apiKey = geminiApiKey || process.env.GEMINI_API_KEY || '';
+        const ai = getGeminiAI(apiKey);
         const response = await ai.models.generateContent({
           model: selectedModel,
           contents: [{ role: "user", parts: [{ text: prompt }] }],
         });
         resultText = response.text || '[]';
       } else {
-        const apiKey = process.env.OPENROUTER_API_KEY || '';
+        const apiKey = openRouterApiKey || process.env.OPENROUTER_API_KEY || '';
         resultText = await generateOpenRouterContent(openRouterModel, prompt, apiKey);
       }
 
@@ -593,6 +605,8 @@ Integrations:
       });
 
       if (aiProvider === 'gemini') {
+        const apiKey = geminiApiKey || process.env.GEMINI_API_KEY || '';
+        const ai = getGeminiAI(apiKey);
         const parts: any[] = [{ text: prompt }];
         
         // Add image parts for Gemini
@@ -619,8 +633,8 @@ Integrations:
         });
         content = response.text || 'Sorry, I couldn\'t generate a response.';
       } else {
-        const apiKey = process.env.OPENROUTER_API_KEY || '';
-        if (!apiKey) throw new Error('OpenRouter API Key is missing in secrets.');
+        const apiKey = openRouterApiKey || process.env.OPENROUTER_API_KEY || '';
+        if (!apiKey) throw new Error('OpenRouter API Key is missing. Please set it in Settings.');
         content = await generateOpenRouterContent(openRouterModel, prompt, apiKey, attachedFiles);
       }
 
@@ -1624,40 +1638,72 @@ Integrations:
                       </div>
 
                       {aiProvider === 'gemini' ? (
-                        <div className="space-y-2">
-                          <label className="text-[12px] text-[#858585] ml-1">Gemini Model</label>
-                          <select 
-                            value={selectedModel}
-                            onChange={(e) => setSelectedModel(e.target.value)}
-                            className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
-                          >
-                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                            <option value="gemini-2.0-pro-exp-02-05">Gemini 2.0 Pro</option>
-                            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                          </select>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center ml-1">
-                            <label className="text-[12px] text-[#858585]">OpenRouter Model</label>
-                            <button 
-                              onClick={refreshModels}
-                              disabled={isFetchingModels}
-                              className="text-[10px] text-blue-400 hover:text-blue-300 disabled:opacity-50"
-                            >
-                              {isFetchingModels ? 'Refreshing...' : 'Refresh'}
-                            </button>
+                        <>
+                          <div className="space-y-2">
+                            <label className="text-[12px] text-[#858585] ml-1">Gemini API Key</label>
+                            <div className="relative">
+                              <input 
+                                type="password" 
+                                value={geminiApiKey}
+                                onChange={(e) => setGeminiApiKey(e.target.value)}
+                                placeholder="Enter Gemini API Key"
+                                className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
+                              />
+                              <Sparkles size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500/50" />
+                            </div>
+                            <p className="text-[10px] text-[#858585] ml-1">Leave empty to use server-side key (if configured).</p>
                           </div>
-                          <select 
-                            value={openRouterModel}
-                            onChange={(e) => setOpenRouterModel(e.target.value)}
-                            className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
-                          >
-                            {dynamicFreeModels.map(m => (
-                              <option key={m.id} value={m.id}>{m.name}</option>
-                            ))}
-                          </select>
-                        </div>
+                          <div className="space-y-2">
+                            <label className="text-[12px] text-[#858585] ml-1">Gemini Model</label>
+                            <select 
+                              value={selectedModel}
+                              onChange={(e) => setSelectedModel(e.target.value)}
+                              className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
+                            >
+                              <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                              <option value="gemini-2.0-pro-exp-02-05">Gemini 2.0 Pro</option>
+                              <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                            </select>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="space-y-2">
+                            <label className="text-[12px] text-[#858585] ml-1">OpenRouter API Key</label>
+                            <div className="relative">
+                              <input 
+                                type="password" 
+                                value={openRouterApiKey}
+                                onChange={(e) => setOpenRouterApiKey(e.target.value)}
+                                placeholder="Enter OpenRouter API Key"
+                                className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
+                              />
+                              <ExternalLink size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-500/50" />
+                            </div>
+                            <p className="text-[10px] text-[#858585] ml-1">Leave empty to use server-side key (if configured).</p>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center ml-1">
+                              <label className="text-[12px] text-[#858585]">OpenRouter Model</label>
+                              <button 
+                                onClick={refreshModels}
+                                disabled={isFetchingModels}
+                                className="text-[10px] text-blue-400 hover:text-blue-300 disabled:opacity-50"
+                              >
+                                {isFetchingModels ? 'Refreshing...' : 'Refresh'}
+                              </button>
+                            </div>
+                            <select 
+                              value={openRouterModel}
+                              onChange={(e) => setOpenRouterModel(e.target.value)}
+                              className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
+                            >
+                              {dynamicFreeModels.map(m => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </>
                       )}
 
                       <div className="space-y-2">
