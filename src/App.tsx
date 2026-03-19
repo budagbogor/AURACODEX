@@ -132,6 +132,7 @@ const GuideModal = ({ onClose }: { onClose: () => void }) => {
                 <li>Buka <strong>Aura AI Chat</strong> untuk meminta bantuan menulis kerangka kode.</li>
                 <li>Gunakan <strong>Command Palette</strong> untuk navigasi cepat antar fitur.</li>
                 <li>Simpan dan sinkronkan ke <strong>GitHub</strong>.</li>
+                <li>Gunakan <strong>Official Release</strong> (via Git Tags) untuk publikasi otomatis ke APK/EXE.</li>
               </ol>
             </div>
           </div>
@@ -172,6 +173,13 @@ const GuideModal = ({ onClose }: { onClose: () => void }) => {
                 <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400"><Sparkles size={20} /></div>
                 <h4 className="font-bold text-white text-[14px]">Aura Intelligence</h4>
                 <p className="text-[11px] text-gray-400 leading-relaxed">Asisten AI yang memahami konteks seluruh file proyek Anda (Context7 Mode) untuk membantu debugging & optimasi.</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 p-4 rounded-xl border border-blue-500/20 space-y-2 col-span-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400"><RefreshCw size={20} /></div>
+                  <h4 className="font-bold text-white text-[14px]">Automated Release Pipeline</h4>
+                </div>
+                <p className="text-[11px] text-gray-300 leading-relaxed">Satu-satunya IDE yang otomatis membangun APK & EXE dan mempublikasikannya ke GitHub Releases hanya dengan satu tag Git.</p>
               </div>
             </div>
           </div>
@@ -249,8 +257,9 @@ const GuideModal = ({ onClose }: { onClose: () => void }) => {
             </p>
             <ul className="space-y-3 text-sm text-gray-300 mt-4">
               <li><strong>1. Setup Token:</strong> Masukkan GitHub Personal Access Token di Pengaturan.</li>
-              <li><strong>2. Hubungkan Repo:</strong> Masukkan URL repositori Anda di tab GitHub.</li>
-              <li><strong>3. Commit & Push:</strong> Tulis pesan commit dan klik Push untuk menyinkronkan perubahan kode Anda ke cloud.</li>
+              <li><strong>2. Hubungkan Repo:</strong> Masukkan URL atau cari repository Anda di tab GitHub (mendukung pencarian & scroll).</li>
+              <li><strong>3. Commit & Push:</strong> Sinkronkan kode Anda ke cloud dengan pesan commit yang jelas.</li>
+              <li><strong>4. Release Otomatis:</strong> Push tag (cth: <code>v1.0.0</code>) untuk men-trigger pembuatan APK & EXE secara resmi.</li>
             </ul>
           </div>
         );
