@@ -1,0 +1,5 @@
+{
+  "name": "Aura AI IDE",
+  "description": "A VS Code-inspired AI-powered code editor that leverages Gemini for free-tier AI coding assistance.",
+  "requestFramePermissions": []
+}
