@@ -387,6 +387,7 @@ export default function App() {
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [commandInput, setCommandInput] = useState('');
   const [fileSearchInput, setFileSearchInput] = useState('');
+  const [repoSearchInput, setRepoSearchInput] = useState('');
   const [activeFileId, setActiveFileId] = useState<string>('');
   const [layoutMode, setLayoutMode] = useState<'classic' | 'modern'>('classic');
   const [projectName, setProjectName] = useState('AURA-PROJECT');
@@ -1698,8 +1699,23 @@ Integrations:
                           Disconnect
                         </button>
                       </div>
-                      <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-250px)] pr-1 custom-scrollbar">
-                        {githubRepos.map(repo => (
+                      
+                      <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#858585] group-focus-within:text-blue-400 transition-colors" size={14} />
+                        <input 
+                          type="text" 
+                          placeholder="Search repositories..."
+                          value={repoSearchInput}
+                          onChange={e => setRepoSearchInput(e.target.value)}
+                          className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 pl-9 pr-3 text-[12px] focus:outline-none focus:border-blue-500/50 transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-320px)] pr-1 custom-scrollbar">
+                        {githubRepos.filter(repo => 
+                          repo.name.toLowerCase().includes(repoSearchInput.toLowerCase()) || 
+                          (repo.description && repo.description.toLowerCase().includes(repoSearchInput.toLowerCase()))
+                        ).map(repo => (
                           <div 
                             key={repo.id}
                             onClick={() => handleCloneRepo(repo)}
