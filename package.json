@@ -8,6 +8,7 @@
     "dev:tauri": "tauri dev",
     "build": "vite build",
     "build:tauri": "tauri build",
+    "tauri": "tauri",
     "build:web": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
