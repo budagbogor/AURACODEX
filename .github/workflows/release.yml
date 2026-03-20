@@ -1,54 +1,16 @@
-name: Create Professional Release
+name: Release Windows EXE
 
 on:
   push:
     tags:
-      - 'v*' # Trigger on version tags like v1.0.0, v1.1.0
+      - 'v*'
 
 jobs:
-  build-android:
-    name: Build Android APK
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Source
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
-      - name: Build Web App
-        run: npm run build
-
-      - name: Capacitor Sync
-        run: npx cap sync android
-
-      - name: Build Android APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: aura-ide-android-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-
   build-windows:
     name: Build Windows EXE
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
@@ -69,40 +31,9 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Aura IDE Release ${{ github.ref_name }}'
-          releaseBody: |
-            ## Aura AI IDE Official Release ${{ github.ref_name }}
-            - Automatically generated professional build.
-            - Includes both Desktop (Windows) and Mobile (Android) versions.
-            - Includes OTA Update mechanisms (`latest.json`).
+          releaseName: 'Aura IDE v${{ github.ref_name }}'
+          releaseBody: 'Official Windows Installer for Aura AI IDE.'
           releaseDraft: false
           prerelease: false
-
-  append-release:
-    name: Append Android to Release
-    needs: [build-android, build-windows]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download Android APK
-        uses: actions/download-artifact@v4
-        with:
-          name: aura-ide-android-apk
-          path: artifacts
-
-      - name: Rename Files for Release
-        run: |
-          mv artifacts/app-debug.apk artifacts/AuraIDE-Android.apk
-
-      - name: Append to Existing Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: artifacts/AuraIDE-Android.apk
-          tag_name: ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
