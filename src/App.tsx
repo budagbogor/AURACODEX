@@ -64,6 +64,7 @@ import { fetchUserRepos, cloneRepository, pushProjectToGitHub } from './services
 import { generateGeminiStream } from './services/geminiService';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { SUPER_CLAUDE_SKILLS } from './constants/superClaude';
 
 // Windows Installer / Desktop Mode Helpers
 const isTauri = !!(window as any).__TAURI_INTERNALS__;
