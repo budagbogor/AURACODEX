@@ -1300,10 +1300,17 @@ Integrations:
 
       // If running in Tauri Desktop mode, try real execution
       if (isTauri && TauriCommand) {
+        if (!nativeProjectPath) {
+          setTerminalOutput(prev => [...prev, 
+            '[AURA INFO] Terminal Native terdeteksi, tetapi folder proyek belum dibuka secara Native.',
+            'Silakan klik Ikon Folder Kuning di sidebar untuk memilih folder agar perintah seperti "npm" berjalan di lokasi yang benar.'
+          ]);
+          return;
+        }
+
         try {
-          // We use 'powershell' on Windows for better compatibility and full command access natively
           const fullCmd = TauriCommand.create('powershell', ['-Command', val], {
-            cwd: nativeProjectPath || undefined
+            cwd: nativeProjectPath
           });
           
           if (fullCmd.onStdout && typeof fullCmd.onStdout.addListener === 'function') {
@@ -1318,63 +1325,48 @@ Integrations:
             });
           }
 
-          const child = await fullCmd.spawn();
+          await fullCmd.spawn();
           return;
         } catch (err) {
           console.error('Tauri Shell Error:', err);
-          setTerminalOutput(prev => [...prev, `[SYSTEM ERROR] Gagal menjalankan PowerShell: ${err instanceof Error ? err.message : 'Unknown error'}`]);
+          setTerminalOutput(prev => [...prev, `[SYSTEM ERROR] Gagal menjalankan Terminal Native: ${err instanceof Error ? err.message : 'Unknown error'}`]);
         }
       }
       
+      // Fallback Simulator (Web Mode)
       const cmd = val.toLowerCase();
       if (cmd === 'clear') {
         setTerminalOutput([]);
       } else if (cmd === 'ls') {
         setTerminalOutput(prev => [...prev, files.map(f => f.name).join('  ')]);
       } else if (cmd === 'help') {
-        setTerminalOutput(prev => [...prev, 'Available commands: clear, ls, help, scan, build, date, aura --version, whoami, neofetch, git status, git branch, npm start, npm build']);
+        setTerminalOutput(prev => [...prev, 'Available commands: clear, ls, help, scan, build, date, aura --version, whoami, neofetch, git status, git branch, npm start, npm build, npm install']);
       } else if (cmd === 'scan') {
         scanForProblems();
       } else if (cmd === 'date') {
         setTerminalOutput(prev => [...prev, new Date().toLocaleString()]);
-      } else if (cmd === 'build') {
-        setTerminalOutput(prev => [...prev, 'Building project... [####################] 100%', 'Build successful!']);
+      } else if (cmd === 'build' || cmd === 'npm build') {
+        setTerminalOutput(prev => [...prev, '> aura-project@1.0.0 build', '> tsc && vite build', '', 'vite v4.4.9 building for production...', '✓ built in 1.23s']);
       } else if (cmd === 'aura --version') {
-        setTerminalOutput(prev => [...prev, 'Aura IDE v2.5.0 (Enterprise Edition)']);
+        setTerminalOutput(prev => [...prev, 'Aura IDE v3.5.0 (Professional Desktop)']);
       } else if (cmd === 'whoami') {
         setTerminalOutput(prev => [...prev, 'aura-developer']);
       } else if (cmd === 'neofetch') {
         setTerminalOutput(prev => [...prev, 
-          '      .---.      OS: AuraOS 2.5.0',
-          '     /     \\     Host: Aura Virtual Machine',
-          '    | () () |    Kernel: 5.15.0-aura',
-          '     \\  ^  /     Uptime: 12 hours, 34 mins',
-          '      |||||      Packages: 1337 (npm)',
-          '      |||||      Shell: aura-shell 1.0',
-          '                 Resolution: 1920x1080',
-          '                 DE: Aura Desktop',
-          '                 WM: Aura Window Manager',
-          '                 CPU: Aura Virtual CPU (8) @ 3.200GHz',
-          '                 GPU: Aura Virtual GPU',
-          '                 Memory: 4096MiB / 8192MiB'
+          '      .---.      OS: Windows 11 / AuraOS 3.5.0',
+          '     /     \\     Host: Aura Native Desktop',
+          '    | () () |    Kernel: Native Bridge Active',
+          '     \\  ^  /     Uptime: system-managed',
+          '      |||||      Shell: PowerShell (via Aura)',
+          '      |||||      Resolution: native-detected'
         ]);
-      } else if (cmd === 'git status') {
-        setTerminalOutput(prev => [...prev, 'On branch main', 'Your branch is up to date with \'origin/main\'.', 'nothing to commit, working tree clean']);
-      } else if (cmd === 'git branch') {
-        setTerminalOutput(prev => [...prev, '* main', '  feature/ai-chat', '  bugfix/terminal-scroll']);
-      } else if (cmd === 'npm start') {
-        setTerminalOutput(prev => [...prev, '> aura-project@1.0.0 start', '> vite', '', '  VITE v4.4.9  ready in 123 ms', '', '  ➜  Local:   http://localhost:3000/', '  ➜  Network: use --host to expose']);
-      } else if (cmd === 'npm build') {
-        setTerminalOutput(prev => [...prev, '> aura-project@1.0.0 build', '> tsc && vite build', '', 'vite v4.4.9 building for production...', 'transforming...', '✓ 123 modules transformed.', 'rendering chunks...', 'dist/index.html                  0.45 kB', 'dist/assets/index-12345678.js    123.45 kB │ gzip: 45.67 kB', 'dist/assets/index-12345678.css   12.34 kB │ gzip: 3.45 kB', '✓ built in 1.23s']);
-      } else if (cmd.startsWith('npm install')) {
-        if (TauriCommand && nativeProjectPath) {
-          // Handled by reali execution above, but we can provide explicit success message
-          return;
-        }
+      } else if (cmd.startsWith('git')) {
+        setTerminalOutput(prev => [...prev, '[SIMULATOR] Untuk menggunakan Git asli, silakan instal Aura IDE versi Desktop (.exe) dan buka folder secara Native.']);
+      } else if (cmd.startsWith('npm')) {
         setTerminalOutput(prev => [...prev, 
-          '[AURA INFO] Fitur "npm install" hanya dapat dijalankan langsung dalam mode Native Desktop.', 
-          'Silakan pilih folder proyek secara Native (Ikon Kuning) untuk mengaktifkan fitur ini.',
-          'Aura IDE hanya mensimulasikan output terminal untuk tujuan visual dalam mode Web.'
+          '[AURA INFO] Fitur "npm" sungguhan hanya aktif di versi Desktop Aplikasi.', 
+          'Di mode Web, kami hanya menampilkan simulasi terminal untuk visualisasi.',
+          'Silakan unduh installer .exe dari GitHub Releases untuk akses terminal sistem penuh.'
         ]);
       } else {
         setTerminalOutput(prev => [...prev, `Command not found: ${val}`]);
