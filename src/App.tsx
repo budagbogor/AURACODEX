@@ -2100,13 +2100,28 @@ Integrations:
                         <p className="text-[11px] text-[#858585] max-w-[200px]">Sync your repositories and push code directly from Aura IDE.</p>
                       </div>
                       <div className="w-full space-y-3">
-                        <input 
-                          type="password" 
-                          placeholder="Personal Access Token"
-                          value={githubToken}
-                          onChange={e => setGithubToken(e.target.value)}
-                          className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[12px] focus:outline-none focus:border-blue-500/50 transition-all"
-                        />
+                        <div className="relative group/token">
+                          <input 
+                            type="password" 
+                            placeholder="Personal Access Token"
+                            value={githubToken}
+                            onChange={e => setGithubToken(e.target.value)}
+                            className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[12px] focus:outline-none focus:border-blue-500/50 transition-all pr-10"
+                          />
+                          {githubToken && (
+                            <button 
+                              onClick={() => {
+                                setGithubToken('');
+                                localStorage.removeItem('aura_github_token');
+                                setTerminalOutput(prev => [...prev, '[GITHUB] Token reset successfully.']);
+                              }}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-red-400 hover:text-red-300 transition-colors"
+                              title="Reset Token"
+                            >
+                              <RotateCcw size={14} />
+                            </button>
+                          )}
+                        </div>
                         <button 
                           onClick={async () => {
                             if (!githubToken) return;
@@ -2135,12 +2150,27 @@ Integrations:
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-[12px] font-bold text-white">Your Repositories</h3>
-                        <button 
-                          onClick={() => setGithubConnected(false)}
-                          className="text-[10px] text-red-400 hover:text-red-300"
-                        >
-                          Disconnect
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => {
+                              setGithubConnected(false);
+                            }}
+                            className="text-[10px] text-blue-400 hover:text-blue-300"
+                          >
+                            Logout
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setGithubConnected(false);
+                              setGithubToken('');
+                              localStorage.removeItem('aura_github_token');
+                              setTerminalOutput(prev => [...prev, '[GITHUB] Disconnected and token reset.']);
+                            }}
+                            className="text-[10px] text-red-400 hover:text-red-300 border-l border-white/10 pl-2"
+                          >
+                            Reset Token
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="relative group">
@@ -2337,15 +2367,30 @@ Integrations:
                         <>
                           <div className="space-y-2">
                             <label className="text-[12px] text-[#858585] ml-1">Gemini API Key</label>
-                            <div className="relative">
+                            <div className="relative group/key">
                               <input 
                                 type="password" 
                                 value={geminiApiKey}
                                 onChange={(e) => setGeminiApiKey(e.target.value)}
                                 placeholder="Enter Gemini API Key"
-                                className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
+                                className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all pr-12"
                               />
-                              <Sparkles size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500/50" />
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                {geminiApiKey && (
+                                  <button 
+                                    onClick={() => {
+                                      setGeminiApiKey('');
+                                      localStorage.removeItem('aura_gemini_key');
+                                      setTerminalOutput(prev => [...prev, '[AI] Gemini API Key reset.']);
+                                    }}
+                                    className="p-1.5 text-red-400 hover:text-red-300 transition-colors"
+                                    title="Reset Key"
+                                  >
+                                    <RotateCcw size={14} />
+                                  </button>
+                                )}
+                                <Sparkles size={14} className="text-blue-500/50 mr-2" />
+                              </div>
                             </div>
                             <p className="text-[10px] text-[#858585] ml-1">Leave empty to use server-side key (if configured).</p>
                           </div>
@@ -2366,15 +2411,30 @@ Integrations:
                         <>
                           <div className="space-y-2">
                             <label className="text-[12px] text-[#858585] ml-1">Bytez API Key</label>
-                            <div className="relative">
+                            <div className="relative group/key">
                               <input 
                                 type="password" 
                                 value={bytezApiKey}
                                 onChange={(e) => setBytezApiKey(e.target.value)}
                                 placeholder="Enter Bytez API Key"
-                                className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
+                                className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all pr-12"
                               />
-                              <Cpu size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500/50" />
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                {bytezApiKey && (
+                                  <button 
+                                    onClick={() => {
+                                      setBytezApiKey('');
+                                      localStorage.removeItem('aura_bytez_key');
+                                      setTerminalOutput(prev => [...prev, '[AI] Bytez API Key reset.']);
+                                    }}
+                                    className="p-1.5 text-red-400 hover:text-red-300 transition-colors"
+                                    title="Reset Key"
+                                  >
+                                    <RotateCcw size={14} />
+                                  </button>
+                                )}
+                                <Cpu size={14} className="text-emerald-500/50 mr-2" />
+                              </div>
                             </div>
                           </div>
                           <div className="space-y-2">
@@ -2407,15 +2467,30 @@ Integrations:
                         <>
                           <div className="space-y-2">
                             <label className="text-[12px] text-[#858585] ml-1">SumoPod API Key</label>
-                            <div className="relative">
+                            <div className="relative group/key">
                               <input 
                                 type="password" 
                                 value={sumopodApiKey}
                                 onChange={(e) => setSumopodApiKey(e.target.value)}
                                 placeholder="Enter SumoPod API Key"
-                                className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
+                                className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all pr-12"
                               />
-                              <Cpu size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-500/50" />
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                {sumopodApiKey && (
+                                  <button 
+                                    onClick={() => {
+                                      setSumopodApiKey('');
+                                      localStorage.removeItem('aura_sumopod_key');
+                                      setTerminalOutput(prev => [...prev, '[AI] SumoPod API Key reset.']);
+                                    }}
+                                    className="p-1.5 text-red-400 hover:text-red-300 transition-colors"
+                                    title="Reset Key"
+                                  >
+                                    <RotateCcw size={14} />
+                                  </button>
+                                )}
+                                <Cpu size={14} className="text-orange-500/50 mr-2" />
+                              </div>
                             </div>
                           </div>
                           <div className="space-y-2">
@@ -2435,15 +2510,30 @@ Integrations:
                         <>
                           <div className="space-y-2">
                             <label className="text-[12px] text-[#858585] ml-1">OpenRouter API Key</label>
-                            <div className="relative">
+                            <div className="relative group/key">
                               <input 
                                 type="password" 
                                 value={openRouterApiKey}
                                 onChange={(e) => setOpenRouterApiKey(e.target.value)}
                                 placeholder="Enter OpenRouter API Key"
-                                className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
+                                className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all pr-12"
                               />
-                              <ExternalLink size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-500/50" />
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                {openRouterApiKey && (
+                                  <button 
+                                    onClick={() => {
+                                      setOpenRouterApiKey('');
+                                      localStorage.removeItem('aura_openrouter_key');
+                                      setTerminalOutput(prev => [...prev, '[AI] OpenRouter API Key reset.']);
+                                    }}
+                                    className="p-1.5 text-red-400 hover:text-red-300 transition-colors"
+                                    title="Reset Key"
+                                  >
+                                    <RotateCcw size={14} />
+                                  </button>
+                                )}
+                                <ExternalLink size={14} className="text-purple-500/50 mr-2" />
+                              </div>
                             </div>
                             <p className="text-[10px] text-[#858585] ml-1">Leave empty to use server-side key (if configured).</p>
                           </div>
@@ -2595,24 +2685,53 @@ Integrations:
                     <h3 className="text-[11px] font-bold uppercase tracking-widest text-orange-500">Supabase Integration</h3>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-[12px] text-[#858585] ml-1">Supabase URL</label>
-                        <input 
-                          type="text" 
-                          value={supabaseUrl}
-                          onChange={(e) => setSupabaseUrl(e.target.value)}
-                          className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
-                          placeholder="https://xyz.supabase.co"
-                        />
+                        <div className="relative group/key">
+                          <input 
+                            type="text" 
+                            value={supabaseUrl}
+                            onChange={(e) => setSupabaseUrl(e.target.value)}
+                            className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all pr-10"
+                            placeholder="https://xyz.supabase.co"
+                          />
+                          {supabaseUrl && (
+                            <button 
+                              onClick={() => {
+                                setSupabaseUrl('');
+                                localStorage.removeItem('aura_supabase_url');
+                                setTerminalOutput(prev => [...prev, '[SUPABASE] URL reset.']);
+                              }}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-red-400 hover:text-red-300 transition-colors"
+                              title="Reset URL"
+                            >
+                              <RotateCcw size={14} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-[12px] text-[#858585] ml-1">Anon Key</label>
-                        <input 
-                          type="password" 
-                          value={supabaseAnonKey}
-                          onChange={(e) => setSupabaseAnonKey(e.target.value)}
-                          className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all"
-                          placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                        />
+                        <div className="relative group/key">
+                          <input 
+                            type="password" 
+                            value={supabaseAnonKey}
+                            onChange={(e) => setSupabaseAnonKey(e.target.value)}
+                            className="w-full bg-[#3c3c3c] border border-white/5 rounded-xl py-2 px-3 text-[13px] focus:outline-none focus:border-blue-500/50 transition-all pr-10"
+                            placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                          />
+                          {supabaseAnonKey && (
+                            <button 
+                              onClick={() => {
+                                setSupabaseAnonKey('');
+                                localStorage.removeItem('aura_supabase_key');
+                                setTerminalOutput(prev => [...prev, '[SUPABASE] Key reset.']);
+                              }}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-red-400 hover:text-red-300 transition-colors"
+                              title="Reset Key"
+                            >
+                              <RotateCcw size={14} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <button 
                         onClick={async () => {
