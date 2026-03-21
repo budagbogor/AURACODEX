@@ -152,16 +152,18 @@ const TitleBar = ({ projectName }: { projectName: string }) => {
   if (!isTauri) return null;
 
   return (
-    <div 
-      data-tauri-drag-region
-      className="h-10 bg-[#0c0c0c] border-b border-white/5 flex items-center justify-between px-4 select-none z-50 sticky top-0"
-    >
-      <div className="flex items-center gap-2 pointer-events-none">
+    <div className="h-10 bg-[#0c0c0c] border-b border-white/5 flex items-center justify-between px-4 select-none z-50 sticky top-0 relative">
+      {/* Drag Region Overlay */}
+      <div data-tauri-drag-region className="absolute inset-0 z-0" />
+
+      {/* Left Area: Logo & Name */}
+      <div className="flex items-center gap-2 pointer-events-none z-10 relative">
         <AuraLogo size={18} />
         <span className="text-[11px] font-bold text-gray-400 tracking-widest uppercase">Aura AI IDE</span>
       </div>
       
-      <div className="flex-1 flex justify-center h-full items-center pointer-events-none gap-4">
+      {/* Center Area: Folder & Search */}
+      <div className="flex-1 flex justify-center h-full items-center pointer-events-none gap-4 z-10 relative">
         <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md">
           <Folder size={12} className="text-blue-400" />
           <span className="text-[11px] font-bold text-blue-300 uppercase tracking-tight">{projectName}</span>
@@ -172,14 +174,24 @@ const TitleBar = ({ projectName }: { projectName: string }) => {
         </div>
       </div>
 
-      <div className="flex items-center">
-        <button onClick={() => tauriWindow?.minimize()} className="p-2 hover:bg-white/10 text-gray-400 transition-colors">
+      {/* Right Area: Windows Controls */}
+      <div className="flex items-center z-20 relative">
+        <button 
+          onClick={(e) => { e.stopPropagation(); tauriWindow?.minimize(); }} 
+          className="p-2 hover:bg-white/10 text-gray-400 transition-colors cursor-pointer"
+        >
           <svg width="12" height="12" viewBox="0 0 12 12"><rect fill="currentColor" width="10" height="1" x="1" y="6"/></svg>
         </button>
-        <button onClick={() => tauriWindow?.toggleMaximize()} className="p-2 hover:bg-white/10 text-gray-400 transition-colors">
+        <button 
+          onClick={(e) => { e.stopPropagation(); tauriWindow?.toggleMaximize(); }} 
+          className="p-2 hover:bg-white/10 text-gray-400 transition-colors cursor-pointer"
+        >
           <svg width="12" height="12" viewBox="0 0 12 12"><rect fill="none" stroke="currentColor" width="9" height="9" x="1.5" y="1.5"/></svg>
         </button>
-        <button onClick={() => tauriWindow?.close()} className="p-2 hover:bg-red-500/80 hover:text-white text-gray-400 transition-colors">
+        <button 
+          onClick={(e) => { e.stopPropagation(); tauriWindow?.close(); }} 
+          className="p-2 hover:bg-red-500/80 hover:text-white text-gray-400 transition-colors cursor-pointer"
+        >
           <X size={14} />
         </button>
       </div>
