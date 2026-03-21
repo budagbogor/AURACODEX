@@ -26,6 +26,9 @@
 @rem Set local scope for the variables with windows NT shell
 if "%OS%"=="Windows_NT" setlocal
 
+@rem Force JAVA_HOME to JDK 17 for Android Gradle Plugin compatibility
+set JAVA_HOME=C:\Program Files\Java\jdk-17
+
 set DIRNAME=%~dp0
 if "%DIRNAME%"=="" set DIRNAME=.
 @rem This is normally unused

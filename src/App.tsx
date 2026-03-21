@@ -608,7 +608,7 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Resizing State
-  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const [sidebarWidth, setSidebarWidth] = useState(240);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(250);
   const [browserWidth, setBrowserWidth] = useState(window.innerWidth / 2);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);

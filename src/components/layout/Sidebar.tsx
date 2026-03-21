@@ -824,10 +824,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="p-6 space-y-8 custom-scrollbar h-full overflow-y-auto"
+                className="p-4 space-y-6 custom-scrollbar h-full overflow-y-auto"
               >
                 {/* Visual Section */}
-                <section className="space-y-4">
+                <section className="space-y-3">
                   <h3 className="text-[11px] font-bold uppercase tracking-widest text-blue-500 flex items-center gap-2">
                     <Layout size={14} /> Appearance & Layout
                   </h3>
@@ -847,15 +847,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </section>
 
                 {/* AI Configuration Section */}
-                <section className="space-y-4">
+                <section className="space-y-3">
                   <h3 className="text-[11px] font-bold uppercase tracking-widest text-purple-500 flex items-center gap-2">
                     <Sparkles size={14} /> AI Intelligence Center
                   </h3>
                   
-                  <div className="space-y-4 bg-black/20 p-4 rounded-2xl border border-white/5">
+                  <div className="space-y-3 bg-black/20 p-3 rounded-xl border border-white/5">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-gray-500 uppercase">Provider & Model</label>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-col gap-2">
                         <select 
                           value={aiProvider}
                           onChange={(e: any) => setAiProvider(e.target.value)}
