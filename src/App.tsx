@@ -1230,11 +1230,22 @@ Integrations:
     // If running in Tauri Desktop mode, try real execution
     if (isTauri && TauriCommand && nativeProjectPath) {
       try {
-        const child = await TauriCommand.create(
-          'powershell',
-          ['-NoProfile', '-NonInteractive', '-Command', val],
-          { cwd: nativeProjectPath }
-        ).spawn();
+        const parts = val.split(' ');
+        const mainCmd = parts[0];
+        const args = parts.slice(1);
+
+        // Try direct command execution first (more likely to match allowlist)
+        let child;
+        try {
+          child = await TauriCommand.create(mainCmd, args, { cwd: nativeProjectPath }).spawn();
+        } catch (e) {
+          // Fallback to powershell for complex commands or if direct fails
+          child = await TauriCommand.create(
+            'powershell',
+            ['-NoProfile', '-NonInteractive', '-Command', val],
+            { cwd: nativeProjectPath }
+          ).spawn();
+        }
 
         child.stdout.on('data', (line: string) => {
           if (line && line.trim()) appendOutput(line);
@@ -1256,23 +1267,9 @@ Integrations:
         return; 
       } catch (err: any) {
         console.error('Tauri Shell Error:', err);
-        // Fallback to powershell direct execution if spawn fails
-        try {
-          const output = await TauriCommand.create(
-            'powershell',
-            ['-NoProfile', '-NonInteractive', '-Command', val],
-            { cwd: nativeProjectPath }
-          ).execute();
-          if (output.stdout) {
-            output.stdout.split('\n').filter((l: string) => l.trim()).forEach((line: string) => appendOutput(line));
-          }
-          if (output.stderr) {
-            output.stderr.split('\n').filter((l: string) => l.trim()).forEach((line: string) => appendOutput(`[ERR] ${line}`));
-          }
-          return;
-        } catch (err2: any) {
-          appendOutput(`[SYSTEM ERROR] ${err2?.message || 'Gagal menjalankan perintah native.'}`);
-        }
+        appendOutput(`[SYSTEM ERROR] ${err?.message || 'Gagal menjalankan perintah native.'}`);
+        appendOutput(`[DEBUG] CWD: ${nativeProjectPath}`);
+        appendOutput(`[DEBUG] CMD: ${val}`);
       }
     } else {
       // Fallback Simulator (only if not in native mode or no folder open)
