@@ -22,6 +22,7 @@ interface EditorAreaProps {
   openFolder: () => void;
   setSidebarTab: (tab: any) => void;
   createNewFile: () => void;
+  onCreateProject: () => void;
   handleCloneRepo: (repo: any) => void;
   browserWidth: number;
   setIsResizingBrowser: (v: boolean) => void;
@@ -46,6 +47,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   openFolder,
   setSidebarTab,
   createNewFile,
+  onCreateProject,
   handleCloneRepo,
   browserWidth,
   setIsResizingBrowser,
@@ -72,6 +74,13 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                 <FolderOpen size={20} className="text-blue-500 group-hover:scale-110 transition-transform" />
               </div>
               <span className="text-xs font-medium">Open Folder</span>
+            </button>
+            <button onClick={onCreateProject} className="flex flex-col items-center gap-2 p-4 bg-[#252526]/50 backdrop-blur-md hover:bg-[#2d2d2d] rounded-xl border border-white/5 transition-all group hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/10 active:scale-95">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors">
+                <FolderOpen size={20} className="text-gray-400 group-hover:scale-110 transition-transform" />
+                <Plus size={10} className="absolute ml-4 mt-4 text-gray-400 font-bold" />
+              </div>
+              <span className="text-xs font-medium focus:text-gray-300">Create a new project</span>
             </button>
             <button 
               onClick={() => setSidebarTab('github')} 

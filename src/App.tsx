@@ -62,6 +62,7 @@ import { BottomPanel } from '@/components/layout/BottomPanel';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { AuraLogo } from '@/components/layout/AuraLogo';
 import { GuideModal } from '@/components/features/GuideModal';
+import { CreateProjectModal } from '@/components/modals/CreateProjectModal';
 import { twMerge } from 'tailwind-merge';
 import { 
   AI_PROVIDERS, 
@@ -191,6 +192,7 @@ export default function App() {
   const [tauriDialog, setTauriDialog] = useState<any>(null);
   const [tauriFs, setTauriFs] = useState<any>(null);
   const [nativeProjectPath, setNativeProjectPath] = useState<string | null>(null);
+  const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
 
   const activeProcessRef = useRef<any>(null);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
@@ -1120,6 +1122,78 @@ Integrations:
     }
   };
 
+  const handleCreateProjectConfirm = async (path: string, projectName: string) => {
+    if (!tauriFs) {
+      alert("Fitur Native FS hanya tersedia di aplikasi Desktop (.exe).");
+      return;
+    }
+    try {
+      // Normalize and construct full path
+      const fullPath = `${path}/${projectName}`.replace(/\\/g, '/');
+      
+      // Create directory silently
+      await tauriFs.mkdir(fullPath, { recursive: true });
+      
+      // Mount the new project folder to Explorer
+      setNativeProjectPath(fullPath);
+      appendTerminalOutput([`[SYSTEM] Project baru dibuat di: ${fullPath}`, '[SYSTEM] Membuka project...']);
+      
+      await syncFilesFromNativePath(fullPath);
+      
+      appendTerminalOutput('[SYSTEM] Project kini aktif. Anda bisa menggunakan AI Composer untuk mengisi struktur otomatis.');
+      setShowCreateProjectModal(false);
+    } catch (err: any) {
+      console.error('Create Project Error:', err);
+      appendTerminalOutput(`[ERROR] Gagal membuat project: ${err.message}`);
+      alert(`Gagal membuat project: ${err.message}`);
+    }
+  };
+
+  const handleAutoPreview = () => {
+    setShowBrowser(true);
+    const hasPackageJson = files.some(f => f.name === 'package.json');
+    
+    if (hasPackageJson) {
+      setBrowserSrcDoc(null);
+      setBrowserUrl('http://localhost:5173');
+      appendTerminalOutput('[PREVIEW] Menampilkan localhost:5173. Pastikan dev server sudah running (contoh: npm run dev).');
+    } else {
+      const htmlFile = files.find(f => f.name.endsWith('index.html') || f.name.endsWith('.html'));
+      if (htmlFile) {
+        let htmlContent = htmlFile.content;
+        
+        // Inject CSS & JS ke dalam HTML
+        files.forEach(f => {
+          if (f.name.endsWith('.css')) {
+            const cssRegex = new RegExp(`<link[^>]*href=["']\\.?/?${f.name}["'][^>]*>`, 'g');
+            if (cssRegex.test(htmlContent)) {
+              htmlContent = htmlContent.replace(cssRegex, `<style>${f.content}</style>`);
+            } else {
+              // Jika tidak ketemu link spesifik, force inject di head
+               htmlContent = htmlContent.replace('</head>', `<style>${f.content}</style></head>`);
+            }
+          }
+          if (f.name.endsWith('.js')) {
+            const jsRegex = new RegExp(`<script[^>]*src=["']\\.?/?${f.name}["'][^>]*>.*?</script>`, 'g');
+            if (jsRegex.test(htmlContent)) {
+              htmlContent = htmlContent.replace(jsRegex, `<script>${f.content}</script>`);
+            } else {
+               // Inject JS sebelum body end tag
+               htmlContent = htmlContent.replace('</body>', `<script>${f.content}</script></body>`);
+            }
+          }
+        });
+        
+        setBrowserUrl('');
+        setBrowserSrcDoc(htmlContent);
+        appendTerminalOutput('[PREVIEW] Men-generate Static Preview di Internal Browser.');
+      } else {
+        appendTerminalOutput('[PREVIEW] Gagal: Tidak menemukan index.html atau package.json.');
+        alert('Proyek tidak dikenali untuk Live Preview. Harap buat file index.html terlebih dahulu.');
+      }
+    }
+  };
+
   const exportProject = async () => {
     const zip = new JSZip();
     files.forEach(file => {
@@ -1644,6 +1718,7 @@ Integrations:
         createNewFile={createNewFile}
         openFolder={openFolder}
         closeFolder={closeFolder}
+        autoPreview={handleAutoPreview}
         exportProject={exportProject}
         handleCloudSave={handleCloudSave}
         handleCloudLoad={handleCloudLoad}
@@ -1791,6 +1866,7 @@ Integrations:
             handleEditorChange={handleEditorChange}
             editorFontSize={parseInt(editorFontSize as any) || 14}
             openFolder={openFolder}
+            onCreateProject={() => setShowCreateProjectModal(true)}
             setSidebarTab={setSidebarTab}
             createNewFile={createNewFile}
             handleCloneRepo={handleCloneRepo}
@@ -1879,6 +1955,13 @@ Integrations:
           &copy; 2026 B.O.A. Indonesia
         </div>
       </div>
+
+      <CreateProjectModal 
+        isOpen={showCreateProjectModal} 
+        onClose={() => setShowCreateProjectModal(false)}
+        onConfirm={handleCreateProjectConfirm}
+        tauriDialog={tauriDialog}
+      />
     </div>
   );
 }

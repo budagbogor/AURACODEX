@@ -16,6 +16,7 @@ import {
   FREE_MODELS, BYTEZ_MODELS, SUMOPOD_MODELS, GEMINI_MODELS,
   SUPER_CLAUDE_SKILLS, SUPER_CLAUDE_COMMANDS, MCP_TEMPLATES 
 } from '@/utils/constants';
+import { AiComposerPanel } from '../AiComposer/AiComposerPanel';
 
 interface SidebarProps {
   layoutMode: 'classic' | 'modern';
@@ -68,6 +69,7 @@ interface SidebarProps {
   createNewFile: () => void;
   openFolder: () => void;
   closeFolder: () => void;
+  autoPreview: () => void;
   exportProject: () => void;
   handleCloudSave: () => void;
   handleCloudLoad: () => void;
@@ -154,6 +156,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   handleCloneRepo, browserUrl, setBrowserUrl, browserSrcDoc, setBrowserSrcDoc,
   setShowBrowser, isTauri, TauriCommand, openFolderNative,
   createNewFile, openFolder, closeFolder, exportProject,
+  autoPreview,
   handleCloudSave, handleCloudLoad, handleGithubPush, executeCommand,
   appendTerminalOutput, handleContextMenu,
 
@@ -369,6 +372,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button onClick={closeFolder} title="Close Folder" className="hover:text-red-400 transition-colors">
                   <X size={14} />
                 </button>
+                <div className="w-[1px] h-3.5 bg-white/20 my-auto mx-1" />
+                <button onClick={autoPreview} title="Live Preview Auto" className="hover:text-green-400 transition-colors">
+                  <Play size={14} />
+                </button>
                 <button onClick={exportProject} title="Export Project (ZIP)" className="hover:text-white transition-colors">
                   <Download size={14} />
                 </button>
@@ -459,114 +466,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 exit={{ opacity: 0, scale: 0.98 }}
                 className="flex flex-col h-full overflow-hidden"
               >
-                {/* Chat Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                  {chatMessages.map((msg, i) => (
-                    <div key={i} className={cn("flex flex-col gap-2", msg.role === 'user' ? "items-end" : "items-start")}>
-                      <div className="flex items-center gap-2 opacity-50 px-2">
-                        {msg.role === 'user' ? (
-                          <>
-                            <span className="text-[10px] font-bold uppercase tracking-tighter">You</span>
-                            <div className="w-5 h-5 rounded-lg bg-blue-600/20 flex items-center justify-center text-blue-400"><User size={12} /></div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-5 h-5 rounded-lg bg-purple-600/20 flex items-center justify-center text-purple-400"><Bot size={12} /></div>
-                            <span className="text-[10px] font-bold uppercase tracking-tighter text-purple-400 italic">Aura AI</span>
-                          </>
-                        )}
-                      </div>
-                      <div className={cn(
-                        "max-w-[90%] p-3 rounded-2xl text-[13px] leading-relaxed shadow-lg",
-                        msg.role === 'user' 
-                          ? "bg-blue-600 text-white rounded-tr-none border border-blue-500/30" 
-                          : "bg-[#2d2d2d] text-gray-200 rounded-tl-none border border-white/5"
-                      )}>
-                        <div className="prose prose-invert prose-sm max-w-none">
-                          <Markdown 
-                            components={{
-                              code({ node, inline, className, children, ...props }: any) {
-                                const match = /language-(\w+)/.exec(className || '');
-                                return !inline ? (
-                                  <div className="relative group my-2">
-                                    <pre className="bg-black/50 p-3 rounded-xl border border-white/5 overflow-x-auto">
-                                      <code className={className} {...props}>{children}</code>
-                                    </pre>
-                                  </div>
-                                ) : (
-                                  <code className="bg-black/30 px-1 rounded text-blue-400" {...props}>{children}</code>
-                                );
-                              }
-                            }}
-                          >
-                            {msg.content}
-                          </Markdown>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {isAiLoading && (
-                    <div className="flex items-start gap-2 animate-pulse">
-                      <div className="w-5 h-5 rounded-lg bg-purple-600/20 flex items-center justify-center text-purple-400"><Bot size={12} /></div>
-                      <div className="bg-[#2d2d2d] h-8 w-24 rounded-2xl rounded-tl-none border border-white/5" />
-                    </div>
-                  )}
-                  <div ref={chatEndRef} />
-                </div>
-
-                {/* Chat Input Container */}
-                <div className="p-4 border-t border-white/5 bg-[#252526]/50 backdrop-blur-md">
-                  <div className="relative bg-[#1e1e1e] border border-white/10 rounded-2xl focus-within:border-blue-500/50 transition-all p-2 shadow-inner">
-                    <textarea 
-                      placeholder="Ask Aura AI... (Shift+Enter for newline)"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                      className="w-full bg-transparent border-none outline-none text-[13px] text-white p-2 min-h-[60px] max-h-[200px] resize-none"
-                    />
-                    <div className="flex items-center justify-between mt-1 px-1">
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => fileInputRef.current?.click()} className="p-2 hover:bg-white/10 rounded-xl text-gray-500 hover:text-white transition-all" title="Attach Files">
-                          <Paperclip size={16} />
-                        </button>
-                        <button className="p-2 hover:bg-white/10 rounded-xl text-gray-500 hover:text-white transition-all" title="Take Screenshot">
-                          <ImageIcon size={16} />
-                        </button>
-                      </div>
-                      <button 
-                        onClick={handleSendMessage}
-                        disabled={!chatInput.trim() || isAiLoading}
-                        className={cn(
-                          "p-2.5 rounded-xl transition-all shadow-lg",
-                          chatInput.trim() && !isAiLoading ? "bg-blue-600 text-white hover:bg-blue-500 scale-105" : "bg-gray-700 text-gray-500 opacity-50 cursor-not-allowed"
-                        )}
-                      >
-                        <Send size={18} />
-                      </button>
-                    </div>
-                    
-                    {/* Attachments Preview */}
-                    {attachedFiles.length > 0 && (
-                      <div className="flex flex-wrap gap-2 p-2 border-t border-white/5 mt-2">
-                        {attachedFiles.map((f, i) => (
-                          <div key={i} className="flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 px-2 py-1 rounded-lg">
-                            <span className="text-[10px] text-blue-300 truncate max-w-[80px]">{f.name}</span>
-                            <X size={10} className="hover:text-white cursor-pointer" onClick={() => removeAttachment(i)} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2 flex items-center justify-between px-1">
-                    <p className="text-[10px] text-gray-600 italic">Powered by {aiProvider === 'gemini' ? selectedModel : openRouterModel}</p>
-                    {context7Mode && <div className="text-[10px] text-purple-400 font-bold flex items-center gap-1 animate-pulse"><Cpu size={10} /> Context7 ON</div>}
-                  </div>
-                </div>
+                <AiComposerPanel 
+                  provider={aiProvider}
+                  apiKey={
+                    aiProvider === 'gemini' ? geminiApiKey : 
+                    aiProvider === 'openrouter' ? openRouterApiKey : 
+                    aiProvider === 'bytez' ? bytezApiKey :
+                    sumopodApiKey
+                  }
+                  model={
+                    aiProvider === 'gemini' ? selectedModel : 
+                    aiProvider === 'openrouter' ? openRouterModel : 
+                    aiProvider === 'bytez' ? bytezModel :
+                    sumopodModel
+                  }
+                  files={files}
+                  activeFileId={activeFileId}
+                  appendTerminalOutput={appendTerminalOutput}
+                  onApplyCode={(path, content) => {
+                    setFiles(prev => {
+                      const exists = prev.find(f => f.id === path || f.name === path);
+                      if (exists) {
+                        return prev.map(f => f.id === exists.id ? { ...f, content } : f);
+                      } else {
+                        const newFile = { 
+                          id: path, 
+                          name: path.split('/').pop() || path, 
+                          content, 
+                          language: path.endsWith('.ts') || path.endsWith('.tsx') ? 'typescript' : 'javascript',
+                          path: path.includes('/') ? path : undefined
+                        };
+                        return [...prev, newFile];
+                      }
+                    });
+                    setActiveFileId(path);
+                    appendTerminalOutput(`[AI] Perubahan diterapkan pada: ${path}`);
+                  }}
+                />
               </motion.div>
             )}
 
