@@ -1321,87 +1321,105 @@ Integrations:
 
   const [terminalInput, setTerminalInput] = useState('');
 
-  const handleTerminalCommand = async (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      const val = terminalInput.trim();
-      if (!val) return;
-      
-      setTerminalOutput(prev => [...prev, `aura-project $ ${val}`]);
-      setTerminalInput('');
+  const executeCommand = async (command: string) => {
+    const val = command.trim();
+    if (!val) return;
+    
+    // Switch to terminal tab and bottom panel
+    setBottomTab('terminal');
+    setShowBottomPanel(true);
 
-      // If running in Tauri Desktop mode, try real execution
-      if (isTauri && TauriCommand) {
-        if (!nativeProjectPath) {
-          setTerminalOutput(prev => [...prev, 
-            '[AURA INFO] Terminal Native terdeteksi, tetapi folder proyek belum dibuka secara Native.',
-            'Silakan klik Ikon Folder Kuning di sidebar untuk memilih folder agar perintah seperti "npm" berjalan di lokasi yang benar.'
-          ]);
-          return;
-        }
+    setTerminalOutput(prev => [...prev, `aura-project $ ${val}`]);
 
-        try {
-          const fullCmd = TauriCommand.create('powershell', ['-Command', val], {
-            cwd: nativeProjectPath
-          });
-          
-          if (fullCmd.onStdout && typeof fullCmd.onStdout.addListener === 'function') {
-            fullCmd.onStdout.addListener((data: string) => {
-              setTerminalOutput(prev => [...prev, data]);
-            });
-          }
-
-          if (fullCmd.onStderr && typeof fullCmd.onStderr.addListener === 'function') {
-            fullCmd.onStderr.addListener((data: string) => {
-              setTerminalOutput(prev => [...prev, `[ERROR] ${data}`]);
-            });
-          }
-
-          await fullCmd.spawn();
-          return;
-        } catch (err) {
-          console.error('Tauri Shell Error:', err);
-          setTerminalOutput(prev => [...prev, `[SYSTEM ERROR] Gagal menjalankan Terminal Native: ${err instanceof Error ? err.message : 'Unknown error'}`]);
-        }
-      }
-      
-      // Fallback Simulator (Web Mode)
-      const cmd = val.toLowerCase();
-      if (cmd === 'clear') {
-        setTerminalOutput([]);
-      } else if (cmd === 'ls') {
-        setTerminalOutput(prev => [...prev, files.map(f => f.name).join('  ')]);
-      } else if (cmd === 'help') {
-        setTerminalOutput(prev => [...prev, 'Available commands: clear, ls, help, scan, build, date, aura --version, whoami, neofetch, git status, git branch, npm start, npm build, npm install']);
-      } else if (cmd === 'scan') {
-        scanForProblems();
-      } else if (cmd === 'date') {
-        setTerminalOutput(prev => [...prev, new Date().toLocaleString()]);
-      } else if (cmd === 'build' || cmd === 'npm build') {
-        setTerminalOutput(prev => [...prev, '> aura-project@1.0.0 build', '> tsc && vite build', '', 'vite v4.4.9 building for production...', '✓ built in 1.23s']);
-      } else if (cmd === 'aura --version') {
-        setTerminalOutput(prev => [...prev, 'Aura IDE v3.5.0 (Professional Desktop)']);
-      } else if (cmd === 'whoami') {
-        setTerminalOutput(prev => [...prev, 'aura-developer']);
-      } else if (cmd === 'neofetch') {
+    // If running in Tauri Desktop mode, try real execution
+    if (isTauri && TauriCommand) {
+      if (!nativeProjectPath) {
         setTerminalOutput(prev => [...prev, 
-          '      .---.      OS: Windows 11 / AuraOS 3.5.0',
-          '     /     \\     Host: Aura Native Desktop',
-          '    | () () |    Kernel: Native Bridge Active',
-          '     \\  ^  /     Uptime: system-managed',
-          '      |||||      Shell: PowerShell (via Aura)',
-          '      |||||      Resolution: native-detected'
+          '[AURA INFO] Terminal Native terdeteksi, tetapi folder proyek belum dibuka secara Native.',
+          'Silakan klik Ikon Folder Kuning di sidebar untuk memilih folder agar perintah seperti "npm" berjalan di lokasi yang benar.'
         ]);
-      } else if (cmd.startsWith('git')) {
+        return;
+      }
+
+      try {
+        const fullCmd = TauriCommand.create('powershell', ['-Command', val], {
+          cwd: nativeProjectPath
+        });
+        
+        if (fullCmd.onStdout && typeof fullCmd.onStdout.addListener === 'function') {
+          fullCmd.onStdout.addListener((data: string) => {
+            setTerminalOutput(prev => [...prev, data]);
+          });
+        }
+
+        if (fullCmd.onStderr && typeof fullCmd.onStderr.addListener === 'function') {
+          fullCmd.onStderr.addListener((data: string) => {
+            setTerminalOutput(prev => [...prev, `[ERROR] ${data}`]);
+          });
+        }
+
+        await fullCmd.spawn();
+        return;
+      } catch (err) {
+        console.error('Tauri Shell Error:', err);
+        setTerminalOutput(prev => [...prev, `[SYSTEM ERROR] Gagal menjalankan Terminal Native: ${err instanceof Error ? err.message : 'Unknown error'}`]);
+      }
+    }
+    
+    // Fallback Simulator (Web Mode)
+    const cmd = val.toLowerCase();
+    if (cmd === 'clear') {
+      setTerminalOutput([]);
+    } else if (cmd === 'ls') {
+      setTerminalOutput(prev => [...prev, files.map(f => f.name).join('  ')]);
+    } else if (cmd === 'help') {
+      setTerminalOutput(prev => [...prev, 'Available commands: clear, ls, help, scan, build, date, aura --version, whoami, neofetch, git status, git branch, npm start, npm build, npm install']);
+    } else if (cmd === 'scan') {
+      scanForProblems();
+    } else if (cmd === 'date') {
+      setTerminalOutput(prev => [...prev, new Date().toLocaleString()]);
+    } else if (cmd === 'build' || cmd === 'npm build') {
+      setTerminalOutput(prev => [...prev, '> aura-project@1.0.0 build', '> tsc && vite build', '', 'vite v4.4.9 building for production...', '✓ built in 1.23s']);
+    } else if (cmd === 'aura --version') {
+      setTerminalOutput(prev => [...prev, 'Aura IDE v3.9.2 (Professional Desktop)']);
+    } else if (cmd === 'whoami') {
+      setTerminalOutput(prev => [...prev, 'aura-developer']);
+    } else if (cmd === 'neofetch') {
+      setTerminalOutput(prev => [...prev, 
+        '      .---.      OS: Windows 11 / AuraOS 3.9.2',
+        '     /     \\     Host: Aura Native Desktop',
+        '    | () () |    Kernel: Native Bridge Active',
+        '     \\  ^  /     Uptime: system-managed',
+        '      |||||      Shell: PowerShell (via Aura)',
+        '      |||||      Resolution: native-detected'
+      ]);
+    } else if (cmd.startsWith('git')) {
+      if (isTauri) {
+        setTerminalOutput(prev => [...prev, '[AURA INFO] Perintah "git" terdeteksi tetapi gagal dieksekusi secara Native. Pastikan folder sudah dibuka secara Native (Ikon Kuning).']);
+      } else {
         setTerminalOutput(prev => [...prev, '[SIMULATOR] Untuk menggunakan Git asli, silakan instal Aura IDE versi Desktop (.exe) dan buka folder secara Native.']);
-      } else if (cmd.startsWith('npm')) {
+      }
+    } else if (cmd.startsWith('npm')) {
+      if (isTauri) {
+        setTerminalOutput(prev => [...prev, '[AURA INFO] Perintah "npm" terdeteksi tetapi gagal dieksekusi secara Native. Pastikan folder sudah dibuka secara Native (Ikon Kuning).']);
+      } else {
         setTerminalOutput(prev => [...prev, 
           '[AURA INFO] Fitur "npm" sungguhan hanya aktif di versi Desktop Aplikasi.', 
           'Di mode Web, kami hanya menampilkan simulasi terminal untuk visualisasi.',
           'Silakan unduh installer .exe dari GitHub Releases untuk akses terminal sistem penuh.'
         ]);
-      } else {
-        setTerminalOutput(prev => [...prev, `Command not found: ${val}`]);
       }
+    } else {
+      setTerminalOutput(prev => [...prev, `Command not found: ${val}`]);
+    }
+  };
+
+  const handleTerminalCommand = async (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      const val = terminalInput.trim();
+      if (!val) return;
+      setTerminalInput('');
+      await executeCommand(val);
     }
   };
 
@@ -1986,6 +2004,15 @@ Integrations:
                                         >
                                           <Save size={14} />
                                         </button>
+                                        {(match[1] === 'bash' || match[1] === 'sh' || match[1] === 'powershell' || match[1] === 'cmd' || String(children).includes('npm')) && (
+                                          <button
+                                            onClick={() => executeCommand(String(children).replace(/\n$/, ''))}
+                                            className="p-1.5 bg-blue-600/50 hover:bg-blue-600/80 rounded-md text-white transition-all backdrop-blur-md border border-blue-400/30"
+                                            title="Run in Terminal"
+                                          >
+                                            <Terminal size={14} />
+                                          </button>
+                                        )}
                                       </div>
                                       <pre className={className} {...props}>
                                         {children}
