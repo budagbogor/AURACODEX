@@ -1181,16 +1181,55 @@ Integrations:
   const handleAutoPreview = () => {
     setShowBrowser(true);
     const hasPackageJson = files.some(f => f.name === 'package.json');
+    const activeFileIsReact = activeFile?.name.endsWith('.tsx') || activeFile?.name.endsWith('.jsx');
     
-    if (hasPackageJson) {
+    if (hasPackageJson && !activeFileIsReact) {
       setBrowserSrcDoc(null);
-      setBrowserUrl('http://localhost:5173');
-      appendTerminalOutput('[PREVIEW] Menampilkan localhost:5173. Pastikan dev server sudah running (contoh: npm run dev).');
+      setBrowserUrl('http://localhost:3000');
+      appendTerminalOutput('[PREVIEW] Menampilkan localhost:3000. Pastikan dev server sudah running.');
+    } else if (activeFileIsReact) {
+      // REACT SANDBOX MODE (Babel-Standalone)
+      setBrowserUrl('');
+      const code = activeFile?.content || '';
+      
+      const srcDoc = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+          <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+          <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+          <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            body { background: #0f172a; color: white; min-height: 100vh; margin: 0; font-family: sans-serif; }
+            #root { height: 100%; width: 100%; }
+          </style>
+        </head>
+        <body>
+          <div id="root"></div>
+          <script type="text/babel" data-presets="react,typescript">
+            ${code.replace(/export\s+default\s+function/g, 'function App')}
+            ${code.includes('export default function') ? '' : (code.includes('function App') ? '' : 'function App() { return <div>Mohon gunakan "export default function App" untuk pratinjau.</div>; }')}
+            
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<App />);
+          </script>
+        </body>
+        </html>
+      `;
+      setBrowserSrcDoc(srcDoc);
+      appendTerminalOutput(`[PREVIEW] Generating React Sandbox for ${activeFile?.name}...`);
     } else {
       const htmlFile = files.find(f => f.name.endsWith('index.html') || f.name.endsWith('.html'));
       if (htmlFile) {
         let htmlContent = htmlFile.content;
         
+        // Inject Tailwind if missing
+        if (!htmlContent.includes('cdn.tailwindcss.com')) {
+          htmlContent = htmlContent.replace('</head>', '<script src="https://cdn.tailwindcss.com"></script></head>');
+        }
+
         // Inject CSS & JS ke dalam HTML
         files.forEach(f => {
           if (f.name.endsWith('.css')) {
@@ -1198,8 +1237,7 @@ Integrations:
             if (cssRegex.test(htmlContent)) {
               htmlContent = htmlContent.replace(cssRegex, `<style>${f.content}</style>`);
             } else {
-              // Jika tidak ketemu link spesifik, force inject di head
-               htmlContent = htmlContent.replace('</head>', `<style>${f.content}</style></head>`);
+              htmlContent = htmlContent.replace('</head>', `<style>${f.content}</style></head>`);
             }
           }
           if (f.name.endsWith('.js')) {
@@ -1207,7 +1245,6 @@ Integrations:
             if (jsRegex.test(htmlContent)) {
               htmlContent = htmlContent.replace(jsRegex, `<script>${f.content}</script>`);
             } else {
-               // Inject JS sebelum body end tag
                htmlContent = htmlContent.replace('</body>', `<script>${f.content}</script></body>`);
             }
           }
@@ -1215,10 +1252,10 @@ Integrations:
         
         setBrowserUrl('');
         setBrowserSrcDoc(htmlContent);
-        appendTerminalOutput('[PREVIEW] Men-generate Static Preview di Internal Browser.');
+        appendTerminalOutput(`[PREVIEW] Menampilkan ${htmlFile.name} dengan Tailwind CDN.`);
       } else {
-        appendTerminalOutput('[PREVIEW] Gagal: Tidak menemukan index.html atau package.json.');
-        alert('Proyek tidak dikenali untuk Live Preview. Harap buat file index.html terlebih dahulu.');
+        appendTerminalOutput('[PREVIEW] Gagal: Tidak menemukan file yang bisa dipratinjau (.tsx, .jsx, atau .html).');
+        alert('Harap buat file index.html atau gunakan file React (.tsx) untuk Live Preview.');
       }
     }
   };
