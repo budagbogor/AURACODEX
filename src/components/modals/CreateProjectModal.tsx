@@ -20,23 +20,44 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   if (!isOpen) return null;
 
   const handleBrowse = async () => {
-    if (!tauriDialog) {
-      alert("Fitur Browse Folder secara Native hanya tesedia di aplikasi Desktop (.exe). Silakan ketik lokasi path (misal: C:/project) secara manual di kotak input.");
+    // Deteksi Tauri
+    if (tauriDialog) {
+      try {
+        const selected = await tauriDialog.open({
+          directory: true,
+          multiple: false,
+          title: 'Select Destination Folder'
+        });
+        if (selected && typeof selected === 'string') {
+          const normalizedPath = selected.replace(/\\/g, '/');
+          setPath(normalizedPath);
+        }
+      } catch (err) {
+        console.error('Failed to browse folder:', err);
+      }
       return;
     }
-    try {
-      const selected = await tauriDialog.open({
-        directory: true,
-        multiple: false,
-        title: 'Select Destination Folder'
-      });
-      if (selected && typeof selected === 'string') {
-        const normalizedPath = selected.replace(/\\/g, '/');
-        setPath(normalizedPath);
+
+    // Deteksi Electron
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI && electronAPI.showOpenDialog) {
+      try {
+        const result = await electronAPI.showOpenDialog({
+          properties: ['openDirectory'],
+          title: 'Select Destination Folder'
+        });
+        if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+          const normalizedPath = result.filePaths[0].replace(/\\/g, '/');
+          setPath(normalizedPath);
+        }
+      } catch (err) {
+        console.error('Failed to browse folder via electron:', err);
       }
-    } catch (err) {
-      console.error('Failed to browse folder:', err);
+      return;
     }
+
+    // Web Fallback
+    alert("Fitur Browse Folder secara Native hanya tesedia di aplikasi Desktop (.exe). Silakan ketik lokasi path (misal: C:/project) secara manual di kotak input.");
   };
 
   return (

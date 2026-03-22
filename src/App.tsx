@@ -60,6 +60,7 @@ import { getFileIcon } from './utils/icons';
 import { EditorArea } from '@/components/layout/EditorArea';
 import { BottomPanel } from '@/components/layout/BottomPanel';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { AiComposerPanel } from '@/components/AiComposer/AiComposerPanel';
 import { AuraLogo } from '@/components/layout/AuraLogo';
 import { GuideModal } from '@/components/features/GuideModal';
 import { CreateProjectModal } from '@/components/modals/CreateProjectModal';
@@ -277,6 +278,7 @@ export default function App() {
   }, []);
 
   const [showBottomPanel, setShowBottomPanel] = useState(true);
+  const [showAiPanel, setShowAiPanel] = useState(true);
   const [bottomTab, setBottomTab] = useState<'terminal' | 'problems' | 'output' | 'debug'>('terminal');
   const [sidebarTab, setSidebarTab] = useState<'files' | 'search' | 'git' | 'ai' | 'github' | 'settings' | 'browser' | 'database'>('files');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -341,7 +343,7 @@ export default function App() {
         const selected = await tauriDialog.open({
           directory: true,
           multiple: false,
-          title: `Pilih Folder untuk Meng-clone ${repo.name}`
+          title: `Pilih Folder (Select as folder repository) untuk Meng-clone ${repo.name}`
         });
         if (selected && typeof selected === 'string') {
           selectedPath = `${selected.replace(/\\/g, '/')}/${repo.name}`;
@@ -1556,8 +1558,53 @@ Integrations:
   };
 
     return (
-    <div className="h-[100dvh] w-full bg-[#1e1e1e] text-[#cccccc] flex flex-col overflow-hidden font-sans selection:bg-blue-500/30">
+    <div className="h-[100dvh] w-full bg-[#1e1e1e] text-[#cccccc] flex flex-col overflow-hidden font-sans selection:bg-blue-500/30 relative">
       <TitleBar projectName={projectName} />
+      
+      {/* Top Menu Bar */}
+      <div className="h-8 bg-[#1e1e1e] border-b border-white/5 flex items-center px-4 text-[12px] text-[#cccccc] gap-4 shrink-0 z-[60] relative">
+        <div className="relative group cursor-pointer hover:text-white px-2 py-1.5">
+          <span>File</span>
+          <div className="absolute top-full left-0 mt-0 bg-[#252526] border border-white/10 rounded shadow-2xl py-1 hidden group-hover:block min-w-[180px]">
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={isTauri ? openFolderNative : openFolder}>Open Folder</div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={createNewFile}>New File</div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={handleSaveFile}>Save Active File (Ctrl+S)</div>
+            <div className="h-[1px] bg-white/10 my-1"></div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={exportProject}>Export Project (ZIP)</div>
+          </div>
+        </div>
+        <div className="relative group cursor-pointer hover:text-white px-2 py-1.5">
+          <span>View</span>
+          <div className="absolute top-full left-0 mt-0 bg-[#252526] border border-white/10 rounded shadow-2xl py-1 hidden group-hover:block min-w-[190px]">
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors flex justify-between items-center" onClick={() => setShowAiPanel(!showAiPanel)}>
+              <span>Panel AI Chat (Kanan)</span>
+              {showAiPanel && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
+            </div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors flex justify-between items-center" onClick={() => setShowBottomPanel(!showBottomPanel)}>
+              <span>Panel Terminal (Bawah)</span>
+              {showBottomPanel && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
+            </div>
+            <div className="h-[1px] bg-white/10 my-1"></div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setLayoutMode(layoutMode === 'classic' ? 'modern' : 'classic')}>Toggle Modern Layout</div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setZenMode(!zenMode)}>Toggle Zen Mode</div>
+          </div>
+        </div>
+        <div className="relative group cursor-pointer hover:text-white px-2 py-1.5">
+          <span>Settings</span>
+          <div className="absolute top-full left-0 mt-0 bg-[#252526] border border-white/10 rounded shadow-2xl py-1 hidden group-hover:block min-w-[200px]">
+             <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setSidebarTab('settings')}>Pengaturan Global</div>
+             <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setSidebarTab('github')}>Koneksi GitHub</div>
+             <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setSidebarTab('database')}>Koneksi Database</div>
+          </div>
+        </div>
+        <div className="relative group cursor-pointer hover:text-white px-2 py-1.5">
+          <span>Help</span>
+          <div className="absolute top-full left-0 mt-0 bg-[#252526] border border-white/10 rounded shadow-2xl py-1 hidden group-hover:block min-w-[160px]">
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setShowGuideModal(true)}>Read Guidance</div>
+          </div>
+        </div>
+      </div>
+
       <div 
         className={cn(
           "flex-1 flex min-h-0 overflow-hidden transition-all duration-300",
@@ -1977,32 +2024,103 @@ Integrations:
       </div>
 
         {/* Bottom Panel (Terminal & Problems) */}
-      <BottomPanel
-        zenMode={zenMode}
-        bottomPanelHeight={bottomPanelHeight}
-        setIsResizingBottom={setIsResizingBottom}
-        bottomTab={bottomTab}
-        setBottomTab={setBottomTab}
-        terminalSessions={terminalSessions}
-        setTerminalSessions={setTerminalSessions}
-        activeTerminalId={activeTerminalId}
-        setActiveTerminalId={setActiveTerminalId}
-        addTerminalSession={addTerminalSession}
-        closeTerminalSession={closeTerminalSession}
-        terminalInput={terminalInput}
-        setTerminalInput={setTerminalInput}
-        handleTerminalCommand={handleTerminalCommand}
-        problems={problems}
-        activeFile={activeFile}
-        isScanning={isScanning}
-        scanForProblems={scanForProblems}
-        nativeProjectPath={nativeProjectPath}
-        commandHistory={commandHistory}
-        historyIndex={historyIndex}
-        setHistoryIndex={setHistoryIndex}
-      />
+        {showBottomPanel && (
+          <BottomPanel
+            zenMode={zenMode}
+            bottomPanelHeight={bottomPanelHeight}
+            setIsResizingBottom={setIsResizingBottom}
+            bottomTab={bottomTab}
+            setBottomTab={setBottomTab}
+            terminalSessions={terminalSessions}
+            setTerminalSessions={setTerminalSessions}
+            activeTerminalId={activeTerminalId}
+            setActiveTerminalId={setActiveTerminalId}
+            addTerminalSession={addTerminalSession}
+            closeTerminalSession={closeTerminalSession}
+            terminalInput={terminalInput}
+            setTerminalInput={setTerminalInput}
+            handleTerminalCommand={handleTerminalCommand}
+            problems={problems}
+            activeFile={activeFile}
+            isScanning={isScanning}
+            scanForProblems={scanForProblems}
+            nativeProjectPath={nativeProjectPath}
+            commandHistory={commandHistory}
+            historyIndex={historyIndex}
+            setHistoryIndex={setHistoryIndex}
+          />
+        )}
 
       </div>
+      
+      {/* 3rd Column (Right Panel): AI Chat / Composer */}
+      {!zenMode && showAiPanel && (
+        <div 
+          className={cn(
+            "h-full w-[360px] flex flex-col shrink-0 bg-[#202021] z-30 transition-all duration-300 shadow-2xl",
+            layoutMode === 'modern' ? "border-r border-white/5" : "border-l border-white/5"
+          )}
+        >
+          <div className="p-3 border-b border-white/5 bg-[#252526]/80 backdrop-blur-md flex items-center justify-between shrink-0">
+            <span className="text-[11px] font-black tracking-widest uppercase text-blue-400 flex items-center gap-2">
+              <Sparkles size={14} /> Aura AI Prompt
+            </span>
+            <button 
+              onClick={() => setShowAiPanel(false)} 
+              className="hover:bg-red-500/20 hover:text-red-400 p-1 rounded-md transition-colors text-white/50" 
+              title="Sembunyikan Panel (Tampilkan via Menu View)"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-hidden relative">
+            <AiComposerPanel 
+              provider={aiProvider}
+              apiKey={
+                aiProvider === 'gemini' ? geminiApiKey : 
+                aiProvider === 'openrouter' ? openRouterApiKey : 
+                aiProvider === 'bytez' ? bytezApiKey :
+                sumopodApiKey
+              }
+              model={
+                aiProvider === 'gemini' ? selectedModel : 
+                aiProvider === 'openrouter' ? openRouterModel : 
+                aiProvider === 'bytez' ? bytezModel :
+                sumopodModel
+              }
+              files={files}
+              activeFileId={activeFileId}
+              appendTerminalOutput={appendTerminalOutput}
+              onSuccess={handleAiSuccess}
+              projectTree={files.map(f => f.id).join('\n')}
+              messages={composerMessages}
+              setMessages={setComposerMessages}
+              onExecuteCommand={executeCommand}
+              onApplyCode={(path, content) => {
+                setFiles(currentFiles => {
+                  const idx = currentFiles.findIndex(f => f.id === path || f.name === path);
+                  if (idx !== -1) {
+                    const existing = currentFiles[idx];
+                    if (existing.content === content) return currentFiles;
+                    const updated = [...currentFiles];
+                    updated[idx] = { ...existing, content };
+                    return updated;
+                  }
+                  return [...currentFiles, { 
+                    id: path, 
+                    name: path.split('/').pop() || path, 
+                    content, 
+                    language: path.endsWith('.ts') || path.endsWith('.tsx') ? 'typescript' : 'javascript'
+                  }];
+                });
+                if (activeFileId !== path) setActiveFileId(path);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       </div>
 
       {/* Status Bar & Footer */}
