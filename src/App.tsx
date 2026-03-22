@@ -647,8 +647,8 @@ export default function App() {
       }
 
       if (isResizingBottom) {
-        const newHeight = window.innerHeight - e.clientY - 24; // 24 is Status Bar height
-        if (newHeight > 100 && newHeight < window.innerHeight - 200) {
+        const newHeight = window.innerHeight - e.clientY - 44; // 24 (Status Bar) + 20 (Copyright)
+        if (newHeight > 60 && newHeight < window.innerHeight - 300) {
           setBottomPanelHeight(newHeight);
         }
       }

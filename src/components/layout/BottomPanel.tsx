@@ -238,15 +238,20 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
       style={{ height: bottomPanelHeight }}
       className="bg-[#1e1e1e] border-t border-white/10 flex flex-col relative shrink-0"
     >
-      {/* Resizer Handle (Horizontal) */}
+      {/* Resizer Handle (Horizontal) - Premium Drag Area */}
       <div 
         onMouseDown={(e) => {
           e.preventDefault();
           setIsResizingBottom(true);
           document.body.style.cursor = 'row-resize';
         }}
-        className="absolute top-[-3px] left-0 right-0 h-1.5 cursor-row-resize hover:bg-blue-500/30 transition-colors z-[60]"
-      />
+        className={cn(
+          "absolute -top-1 left-0 right-0 h-2 cursor-row-resize z-[100] group/resizer",
+          "hover:bg-blue-500/40 transition-all duration-300"
+        )}
+      >
+         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-1 bg-white/10 rounded-full opacity-0 group-hover/resizer:opacity-100 transition-opacity" />
+      </div>
       
       <div className="flex items-center gap-4 px-4 py-1 text-[11px] uppercase font-bold text-[#858585] border-b border-white/5 shrink-0">
         <span 
