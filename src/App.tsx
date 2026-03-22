@@ -84,7 +84,9 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
 // Windows Installer / Desktop Mode Helpers
-const isTauri = !!(window as any).__TAURI_INTERNALS__;
+const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
+const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+
 interface McpTemplateArg {
   key: string;
   label: string;
@@ -149,12 +151,16 @@ const TitleBar = ({ projectName }: { projectName: string }) => {
     }
   }, []);
 
-  if (!isTauri) return null;
+  if (!isTauri && !isElectron) return null;
 
   return (
     <div className="h-10 bg-[#0c0c0c] border-b border-white/5 flex items-center justify-between px-4 select-none z-50 sticky top-0 relative">
       {/* Drag Region Overlay */}
-      <div data-tauri-drag-region className="absolute inset-0 z-0" />
+      <div 
+        data-tauri-drag-region 
+        className="absolute inset-0 z-0" 
+        style={{ WebkitAppRegion: isElectron ? 'drag' : undefined } as any}
+      />
 
       {/* Left Area: Logo & Name */}
       <div className="flex items-center gap-2 pointer-events-none z-10 relative">
@@ -177,19 +183,31 @@ const TitleBar = ({ projectName }: { projectName: string }) => {
       {/* Right Area: Windows Controls */}
       <div className="flex items-center z-20 relative">
         <button 
-          onClick={(e) => { e.stopPropagation(); tauriWindow?.minimize(); }} 
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            if (isTauri) tauriWindow?.minimize();
+            else if (isElectron) (window as any).electronAPI.minimize();
+          }} 
           className="p-2 hover:bg-white/10 text-gray-400 transition-colors cursor-pointer"
         >
           <svg width="12" height="12" viewBox="0 0 12 12"><rect fill="currentColor" width="10" height="1" x="1" y="6"/></svg>
         </button>
         <button 
-          onClick={(e) => { e.stopPropagation(); tauriWindow?.toggleMaximize(); }} 
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            if (isTauri) tauriWindow?.toggleMaximize();
+            else if (isElectron) (window as any).electronAPI.maximize();
+          }} 
           className="p-2 hover:bg-white/10 text-gray-400 transition-colors cursor-pointer"
         >
           <svg width="12" height="12" viewBox="0 0 12 12"><rect fill="none" stroke="currentColor" width="9" height="9" x="1.5" y="1.5"/></svg>
         </button>
         <button 
-          onClick={(e) => { e.stopPropagation(); tauriWindow?.close(); }} 
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            if (isTauri) tauriWindow?.close();
+            else if (isElectron) (window as any).electronAPI.close();
+          }} 
           className="p-2 hover:bg-red-500/80 hover:text-white text-gray-400 transition-colors cursor-pointer"
         >
           <X size={14} />
