@@ -1431,46 +1431,45 @@ Integrations:
           return;
         }
 
-        // --- UNIVERSAL POWERSHELL EXECUTION ---
-        let child;
+        // --- UNIVERSAL SHELL EXECUTION (Tauri v2 Standard) ---
+        let cmdInstance;
         try {
-          child = await TauriCommand.create(
+          // Setup the command listener first
+          cmdInstance = TauriCommand.create(
             'powershell',
             ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', val],
             { cwd: normalizedCwd }
-          ).spawn();
+          );
         } catch (psErr: any) {
-          // Fallback to cmd.exe if PowerShell fails
-          try {
-            child = await TauriCommand.create(
-              'cmd',
-              ['/C', val],
-              { cwd: normalizedCwd }
-            ).spawn();
-          } catch (cmdErr: any) {
-            const errorData = JSON.stringify(cmdErr, Object.getOwnPropertyNames(cmdErr));
-            throw new Error(`Shell tidak tersedia. Detail: ${errorData}`);
-          }
+          // Fallback to cmd.exe
+          cmdInstance = TauriCommand.create(
+            'cmd',
+            ['/C', val],
+            { cwd: normalizedCwd }
+          );
         }
 
-        if (!child) throw new Error("Gagal menginisialisasi shell process.");
+        if (!cmdInstance) throw new Error("Gagal menginisialisasi Command instance.");
 
-        activeProcessRef.current = child;
-
-        child.stdout.on('data', (line: string) => {
-          if (line) appendOutput(line);
+        // Attach listeners to the command instance BEFORE spawning (v2 API)
+        cmdInstance.on('stdout', (data: string) => {
+          if (data) appendOutput(data);
         });
 
-        child.stderr.on('data', (line: string) => {
-          if (line) appendOutput(line);
+        cmdInstance.on('stderr', (data: string) => {
+          if (data) appendOutput(data);
         });
 
-        child.on('close', (data: { code: number | null }) => {
+        cmdInstance.on('close', (data: { code: number | null }) => {
           activeProcessRef.current = null;
           if (data?.code !== 0 && data?.code !== null) {
             appendOutput(`Process exited with code ${data.code}`);
           }
         });
+
+        // Spawn the process
+        const child = await cmdInstance.spawn();
+        activeProcessRef.current = child;
 
         return; 
       } catch (err: any) {
