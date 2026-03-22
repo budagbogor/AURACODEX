@@ -1565,28 +1565,75 @@ Integrations:
       <div className="h-8 bg-[#1e1e1e] border-b border-white/5 flex items-center px-4 text-[12px] text-[#cccccc] gap-4 shrink-0 z-[60] relative">
         <div className="relative group cursor-pointer hover:text-white px-2 py-1.5">
           <span>File</span>
-          <div className="absolute top-full left-0 mt-0 bg-[#252526] border border-white/10 rounded shadow-2xl py-1 hidden group-hover:block min-w-[180px]">
-            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={isTauri ? openFolderNative : openFolder}>Open Folder</div>
+          <div className="absolute top-full left-0 mt-0 bg-[#252526] border border-white/10 rounded shadow-2xl py-1 hidden group-hover:block min-w-[220px]">
             <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={createNewFile}>New File</div>
-            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={handleSaveFile}>Save Active File (Ctrl+S)</div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setShowCreateProjectModal(true)}>New Project / Clone Repo</div>
+            <div className="h-[1px] bg-white/10 my-1"></div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={isTauri ? openFolderNative : openFolder}>Open Folder...</div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={closeFolder}>Close Folder</div>
+            <div className="h-[1px] bg-white/10 my-1"></div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors flex justify-between" onClick={handleSaveFile}>
+              <span>Save Active File</span>
+              <span className="text-[10px] text-gray-500 group-hover:text-blue-200">Ctrl+S</span>
+            </div>
             <div className="h-[1px] bg-white/10 my-1"></div>
             <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={exportProject}>Export Project (ZIP)</div>
           </div>
         </div>
         <div className="relative group cursor-pointer hover:text-white px-2 py-1.5">
+          <span>Edit</span>
+          <div className="absolute top-full left-0 mt-0 bg-[#252526] border border-white/10 rounded shadow-2xl py-1 hidden group-hover:block min-w-[200px]">
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors flex justify-between" onClick={() => setSidebarTab('search')}>
+              <span>Find in Files</span>
+              <span className="text-[10px] text-gray-500 group-hover:text-blue-200">Ctrl+Shift+F</span>
+            </div>
+          </div>
+        </div>
+        <div className="relative group cursor-pointer hover:text-white px-2 py-1.5">
           <span>View</span>
-          <div className="absolute top-full left-0 mt-0 bg-[#252526] border border-white/10 rounded shadow-2xl py-1 hidden group-hover:block min-w-[190px]">
+          <div className="absolute top-full left-0 mt-0 bg-[#252526] border border-white/10 rounded shadow-2xl py-1 hidden group-hover:block min-w-[240px]">
             <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors flex justify-between items-center" onClick={() => setShowAiPanel(!showAiPanel)}>
-              <span>Panel AI Chat (Kanan)</span>
+              <span>Aura AI Prompt (Kanan)</span>
               {showAiPanel && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
             </div>
             <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors flex justify-between items-center" onClick={() => setShowBottomPanel(!showBottomPanel)}>
-              <span>Panel Terminal (Bawah)</span>
+              <span>Terminal & Output (Bawah)</span>
               {showBottomPanel && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
             </div>
             <div className="h-[1px] bg-white/10 my-1"></div>
-            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setLayoutMode(layoutMode === 'classic' ? 'modern' : 'classic')}>Toggle Modern Layout</div>
-            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setZenMode(!zenMode)}>Toggle Zen Mode</div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setSidebarTab('files')}>Explorer</div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setSidebarTab('git')}>Source Control (Git)</div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setSidebarTab('database')}>Databases</div>
+            <div className="h-[1px] bg-white/10 my-1"></div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setLayoutMode(layoutMode === 'classic' ? 'modern' : 'classic')}>Toggle Layout (Classic/Modern)</div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors flex justify-between" onClick={() => setZenMode(!zenMode)}>
+              <span>Toggle Zen Mode</span>
+              {zenMode && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
+            </div>
+          </div>
+        </div>
+        <div className="relative group cursor-pointer hover:text-white px-2 py-1.5">
+          <span>Terminal</span>
+          <div className="absolute top-full left-0 mt-0 bg-[#252526] border border-white/10 rounded shadow-2xl py-1 hidden group-hover:block min-w-[200px]">
+             <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => addTerminalSession()}>New Terminal</div>
+             <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => executeCommand('clear')}>Clear Terminal</div>
+             <div className="h-[1px] bg-white/10 my-1"></div>
+             <div className="px-4 py-2 hover:bg-emerald-600 hover:text-white cursor-pointer transition-colors flex justify-between" onClick={() => executeCommand('npm start')}>
+               <span>Run npm start</span>
+               <span className="text-[10px] text-gray-500 group-hover:text-emerald-200">Start Project</span>
+             </div>
+             <div className="px-4 py-2 hover:bg-emerald-600 hover:text-white cursor-pointer transition-colors flex justify-between" onClick={() => executeCommand('npm run dev')}>
+               <span>Run npm run dev</span>
+               <span className="text-[10px] text-gray-500 group-hover:text-emerald-200">Dev Server</span>
+             </div>
+             <div className="px-4 py-2 hover:bg-purple-600 hover:text-white cursor-pointer transition-colors flex justify-between" onClick={() => executeCommand('npm run build')}>
+               <span>Run npm build</span>
+               <span className="text-[10px] text-gray-500 group-hover:text-purple-200">Production</span>
+             </div>
+             <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors flex justify-between" onClick={() => executeCommand('npm install')}>
+               <span>Run npm install</span>
+               <span className="text-[10px] text-gray-500 group-hover:text-blue-200">Dependencies</span>
+             </div>
           </div>
         </div>
         <div className="relative group cursor-pointer hover:text-white px-2 py-1.5">
@@ -1600,7 +1647,8 @@ Integrations:
         <div className="relative group cursor-pointer hover:text-white px-2 py-1.5">
           <span>Help</span>
           <div className="absolute top-full left-0 mt-0 bg-[#252526] border border-white/10 rounded shadow-2xl py-1 hidden group-hover:block min-w-[160px]">
-            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setShowGuideModal(true)}>Read Guidance</div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => setShowGuideModal(true)}>Read Guidance & Tips</div>
+            <div className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition-colors" onClick={() => window.open('https://github.com/budagbogor/AURA-IDE-BOA', '_blank')}>GitHub Repository</div>
           </div>
         </div>
       </div>
