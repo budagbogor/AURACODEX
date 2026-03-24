@@ -123,10 +123,8 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
               <span className="text-[11px] font-medium whitespace-nowrap">Clone URL</span>
             </button>
           </div>
-          <div className="flex flex-wrap justify-center gap-4 text-[10px] text-[#858585] font-mono uppercase tracking-widest pt-2 pb-6">
-            <div className="flex items-center gap-1.5"><kbd className="bg-[#333] px-1.5 py-0.5 rounded border border-white/10 text-white">Ctrl+P</kbd> Search Files</div>
-            <div className="flex items-center gap-1.5"><kbd className="bg-[#333] px-1.5 py-0.5 rounded border border-white/10 text-white">Ctrl+Shift+P</kbd> Commands</div>
-          </div>
+          {/* Shortcuts removed (available in status bar) */}
+
 
           {/* Workflow Diagram Section */}
           <WorkflowDiagram />

@@ -2266,8 +2266,10 @@ Integrations:
             </div>
           </div>
           <div className="ml-auto flex items-center h-full">
-            <div className="hover:bg-white/10 px-3 h-full flex items-center cursor-pointer transition-colors border-l border-white/10 text-white/70 italic">
-              Ctrl+Shift+P for Commands
+            <div className="hover:bg-white/10 px-3 h-full flex items-center cursor-pointer transition-colors border-l border-white/10 text-white/70 italic gap-3">
+              <span>Ctrl+P Search Files</span>
+              <span className="opacity-40">|</span>
+              <span>Ctrl+Shift+P Commands</span>
             </div>
             <div 
               onClick={() => setZenMode(!zenMode)}
