@@ -126,6 +126,13 @@ export const SUPER_CLAUDE_COMMANDS = [
 
 export const MCP_TEMPLATES = [
   {
+    name: "context7",
+    label: "Context7 Docs (Technical Library)",
+    type: "stdio",
+    commandTemplate: "npx -y @context7/mcp-server",
+    requirements: []
+  },
+  {
     name: "github",
     label: "GitHub Access (Official)",
     type: "stdio",

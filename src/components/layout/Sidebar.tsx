@@ -918,25 +918,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <div 
-                      onClick={() => setContext7Mode(!context7Mode)}
-                      className={cn(
-                        "flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer group",
-                        context7Mode ? "bg-purple-600/10 border-purple-500/30" : "bg-[#333333]/30 border-white/5 hover:border-white/10"
-                      )}
-                    >
-                      <div className="space-y-0.5">
-                        <p className={cn("text-[12px] font-bold flex items-center gap-1.5", context7Mode ? "text-purple-400" : "text-gray-300")}>
-                          <Cpu size={14} /> Context7 Mode
-                        </p>
-                        <p className="text-[10px] text-gray-500">Inject all project files into AI context</p>
-                      </div>
-                      <div className={cn("w-8 h-4 rounded-full relative transition-colors", context7Mode ? "bg-purple-600" : "bg-gray-700")}>
-                        <div className={cn("absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all", context7Mode ? "left-4.5" : "left-0.5")} />
-                      </div>
-                    </div>
-                  </div>
                 </section>
 
                 {/* Integrations Section */}
@@ -992,6 +973,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </h3>
                   
                   <div className="bg-orange-500/5 border border-orange-500/20 p-4 rounded-2xl space-y-4">
+                    {/* Context7 Native Integration Toggle */}
+                    <div 
+                      onClick={() => setContext7Mode(!context7Mode)}
+                      className={cn(
+                        "flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer group mb-2",
+                        context7Mode ? "bg-orange-500/10 border-orange-500/30" : "bg-white/5 border-white/5 hover:border-white/10"
+                      )}
+                    >
+                      <div className="space-y-0.5">
+                        <p className={cn("text-[12px] font-bold flex items-center gap-1.5", context7Mode ? "text-orange-400" : "text-gray-300")}>
+                          <Cpu size={14} /> Context7 Mode (Native)
+                        </p>
+                        <p className="text-[10px] text-gray-500 leading-tight">Auto-Documentation MCP Server (&gt;2000 libraries)</p>
+                      </div>
+                      <div className={cn("w-8 h-4 rounded-full relative transition-colors", context7Mode ? "bg-orange-500" : "bg-gray-700")}>
+                        <div className={cn("absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all", context7Mode ? "left-4.5" : "left-0.5")} />
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-gray-500 uppercase">Load MCP Template</label>
                       <select 

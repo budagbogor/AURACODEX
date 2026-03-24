@@ -80,6 +80,7 @@ import { generateOpenRouterContent, fetchFreeModels, type OpenRouterModel } from
 import { generateBytezContent } from './services/bytezService';
 import { fetchUserRepos, cloneRepository, pushProjectToGitHub, fetchUserProfile } from './services/githubService';
 import { generateSumopodContent } from './services/sumopodService';
+import { mcpManager } from './services/mcpService';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -633,6 +634,46 @@ export default function App() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Context7 Auto-Connect Effect
+  useEffect(() => {
+    if (context7Mode && isTauri) {
+      const existing = mcpServers.find(s => s.name === 'context7');
+      if (!existing || !existing.connected) {
+        const template = MCP_TEMPLATES.find(t => t.name === 'context7');
+        if (template) {
+          if (!existing) {
+            const newServer: any = {
+              name: template.name,
+              url: template.commandTemplate,
+              type: template.type as any,
+              connected: false,
+              tools: [],
+              logs: []
+            };
+            setMcpServers(prev => [...prev, newServer]);
+          }
+          
+          // Trigger connection
+          const connectContext7 = async () => {
+             try {
+              const tools = await mcpManager.connect({
+                name: template.name,
+                serverUrl: template.commandTemplate,
+                type: template.type as any
+              });
+              setMcpServers(prev => prev.map(s => s.name === template.name ? { ...s, connected: true, tools: tools || [] } : s));
+              appendTerminalOutput(`[CONTEXT7] Server dokumentasi terhubung. Siap membantu mencegah halusinasi dengan data terbaru.`);
+            } catch (err: any) {
+              console.error('Context7 connection failed:', err);
+              appendTerminalOutput(`[CONTEXT7 ERROR] Gagal terhubung ke library dokumentasi: ${err.message}`);
+            }
+          };
+          connectContext7();
+        }
+      }
+    }
+  }, [context7Mode]);
+
   // Resizing State
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [aiPanelWidth, setAiPanelWidth] = useState(450);
@@ -944,7 +985,7 @@ export default function App() {
         activeCommandInstruction = `\nActive Command: ${command.instruction}`;
       }
 
-      // Context7 (Deep Context)
+      // Context7 (Deep Context & MCP Docs)
       let deepContext = '';
       if (context7Mode) {
         // Collect all open files with their contents
@@ -952,15 +993,22 @@ export default function App() {
           return `--- File: ${f.name} (${f.language}) ---\n${f.content || '(empty)'}\n`;
         }).join('\n');
 
+        const context7Active = mcpServers.find(s => s.name === 'context7' && s.connected);
+
         deepContext = `
-[DEEP CONTEXT - CONTEXT7 MODE (Workspace Overview)]
-You are analyzing a full workspace. Here are all the files currently opened in the IDE:
+[DEEP CONTEXT - CONTEXT7 MODE ACTIVE]
+1. Workspace Context: You are analyzing a full workspace. All opened files are provided below.
+2. Documentation Engine: ${context7Active ? 'CONNECTED' : 'STANDBY'}. 
+   IMPORTANT: You have access to the Context7 MCP Server for real-time documentation (>2000 libraries). 
+   To prevent hallucinations or using outdated syntax, ALWAYS use the available MCP tools to fetch the latest documentation for any libraries, frameworks, or APIs being discussed (e.g., Next.js, React, Tailwind v4, etc.).
+
+Workspace Files:
 ${allFilesContext}
 
 Active File: ${activeFile?.name || 'None'}
 Integrations:
 - GitHub: ${githubConnected ? 'Connected' : 'Disconnected'}
-- MCP Servers: ${mcpServers.filter(s => s.connected).map(s => s.name).join(', ') || 'None'}
+- ACTIVE MCP Servers: ${mcpServers.filter(s => s.connected).map(s => s.name).join(', ') || 'None'}
 `;
       }
 
