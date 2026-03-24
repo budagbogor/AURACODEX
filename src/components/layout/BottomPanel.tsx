@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Terminal, Plus, X, AlertCircle, AlertTriangle, Info, CheckCircle, RefreshCw, Play } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { FileItem } from '@/types';
@@ -26,6 +26,7 @@ interface BottomPanelProps {
   commandHistory: string[];
   historyIndex: number;
   setHistoryIndex: (index: number) => void;
+  onKillProcess: () => void;
 }
 
 export const BottomPanel: React.FC<BottomPanelProps> = ({
@@ -50,9 +51,22 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
   nativeProjectPath,
   commandHistory,
   historyIndex,
-  setHistoryIndex
+  setHistoryIndex,
+  onKillProcess
 }) => {
+  const terminalEndRef = useRef<HTMLDivElement>(null);
+  const scrollAnchorRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    scrollAnchorRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   const currentSession = terminalSessions.find(s => s.id === activeTerminalId) || terminalSessions[0];
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [terminalSessions, activeTerminalId, currentSession?.output]);
+
   const displayPath = nativeProjectPath || '~/aura-project';
 
   if (zenMode) return null;
@@ -96,10 +110,24 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               >
                 <Plus size={14} />
               </button>
+              
+              <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
+              
+              <button 
+                 onClick={onKillProcess}
+                 className="p-1.5 hover:bg-red-500/20 rounded-md text-red-500/60 hover:text-red-400 transition-all ml-1 flex items-center gap-1.5"
+                 title="Kill Active Process (Ctrl+C)"
+              >
+                <X size={14} />
+                <span className="text-[9px] font-bold">KILL</span>
+              </button>
             </div>
 
             {/* Terminal Output */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1 relative bg-aura-glow">
+            <div 
+              ref={terminalEndRef}
+              className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1 relative bg-aura-glow"
+            >
               <div className="text-blue-400 font-black text-[10px] tracking-[0.2em] uppercase mb-3 text-glow-blue opacity-80 flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                 Aura Terminal Engine v5.0
@@ -126,6 +154,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                   )}
                 </div>
               ))}
+              <div ref={scrollAnchorRef} />
             </div>
 
             {/* Terminal Input Area */}

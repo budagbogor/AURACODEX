@@ -1515,7 +1515,7 @@ Integrations:
           // Setup the command listener first
           cmdInstance = TauriCommand.create(
             'powershell',
-            ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', val],
+            ['-NoLogo', '-NoProfile', '-Command', val],
             { cwd: normalizedCwd }
           );
         } catch (psErr: any) {
@@ -1608,12 +1608,27 @@ Integrations:
     }
   };
 
+  const handleTerminalKill = async () => {
+    if (activeProcessRef.current) {
+      try {
+        await activeProcessRef.current.kill();
+        appendTerminalOutput('[SYSTEM] Process terminated by user.');
+        activeProcessRef.current = null;
+      } catch (e: any) {
+        console.error('Kill Error:', e);
+      }
+    }
+  };
+
   const handleTerminalCommand = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       const val = terminalInput.trim();
       if (!val) return;
       setTerminalInput('');
       await executeCommand(val);
+    } else if (e.key === 'c' && e.ctrlKey) {
+      // Ctrl+C in input to kill process
+      handleTerminalKill();
     }
   };
 
@@ -2219,6 +2234,7 @@ Integrations:
             commandHistory={commandHistory}
             historyIndex={historyIndex}
             setHistoryIndex={setHistoryIndex}
+            onKillProcess={handleTerminalKill}
           />
         )}
 

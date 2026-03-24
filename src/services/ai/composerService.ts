@@ -91,6 +91,28 @@ Harness Canvas and Logic for high-performance web games.
 - Output: Canvas 2D/3D (Three.js) logic and game assets structure.`
 };
 
+function detectBestCategory(files: any[], projectTree: string = ''): string {
+  const contextText = (projectTree + files.map(f => f.id).join(' ')).toLowerCase();
+  
+  if (contextText.includes('capacitor.config') || contextText.includes('android/') || contextText.includes('ios/')) {
+    return 'Mobile App';
+  }
+  if (contextText.includes('tauri.conf.json') || contextText.includes('src-tauri')) {
+    return 'Tauri Desktop';
+  }
+  if (contextText.includes('manifest.json')) {
+    return 'Chrome Extension';
+  }
+  if (contextText.includes('requirements.txt') || contextText.includes('.py')) {
+    return 'Python Automation';
+  }
+  if (contextText.includes('package.json') && (contextText.includes('express') || contextText.includes('prisma') || contextText.includes('mongoose'))) {
+    return 'Backend';
+  }
+  
+  return 'Full Stack'; // Default for web projects
+}
+
 export async function* generateComposerStream(
   provider: string,
   apiKey: string, 
@@ -102,12 +124,18 @@ export async function* generateComposerStream(
   projectTree?: string
 ) {
   const filesContextStr = buildProjectContextPrompt(filesContext, activeFileId, projectTree);
-  const categorySkill = DOMAIN_EXPERTISE[category] || '';
+  
+  let effectiveCategory = category;
+  if (category === 'Auto') {
+    effectiveCategory = detectBestCategory(filesContext, projectTree);
+  }
+  
+  const categorySkill = DOMAIN_EXPERTISE[effectiveCategory] || '';
 
   const completePrompt = `
 ${COMPOSER_SYSTEM_PROMPT}
 
-${categorySkill ? ` \n### APPLIED SKILL CONTEXT:\n${categorySkill}\n` : ''}
+${categorySkill ? ` \n### APPLIED AUTO-DETECTED SKILL [${effectiveCategory}]:\n${categorySkill}\n` : ''}
 ${filesContextStr}
 
 USER REQUEST:

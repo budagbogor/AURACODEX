@@ -136,11 +136,12 @@ export const AiComposerPanel: React.FC<AiComposerPanelProps> = ({
       }
 
       // Final Terminal Commands - Execute only at the END if block is fully closed
-      const finalCmdRegex = /\`\`\`command:([^\n]+)\n?([\s\S]*?)\`\`\`/g;
+      // Enhanced Regex to support both ```command:cmd``` and ```command\ncmd\n```
+      const finalCmdRegex = /```(?:command:([^\n]*)|command)\n?([\s\S]*?)```/g;
       let finalCmdMatch;
       while ((finalCmdMatch = finalCmdRegex.exec(fullResponse)) !== null) {
-        const cmd = finalCmdMatch[1].trim();
-        if (!appliedCommands.has(cmd)) {
+        const cmd = (finalCmdMatch[1] || finalCmdMatch[2]).trim();
+        if (cmd && !appliedCommands.has(cmd)) {
           if (onExecuteCommand) onExecuteCommand(cmd);
           appliedCommands.add(cmd);
         }
@@ -182,12 +183,12 @@ export const AiComposerPanel: React.FC<AiComposerPanelProps> = ({
             </div>
             
             <div className={cn(
-              "w-[95%] p-4 rounded-2xl text-[13px] leading-relaxed shadow-2xl max-w-full glass-card transition-all hover:border-white/20",
+              "w-[98%] p-3 rounded-xl text-[11px] leading-snug shadow-xl max-w-full glass-card transition-all hover:border-white/20",
               msg.role === 'user' 
-                ? "bg-blue-600/20 border-blue-500/40 text-blue-50 rounded-tr-none self-end" 
-                : "bg-white/5 border-white/10 text-gray-200 rounded-tl-none"
+                ? "bg-blue-600/15 border-blue-500/30 text-blue-50 rounded-tr-none self-end" 
+                : "bg-white/5 border-white/10 text-gray-300 rounded-tl-none"
             )}>
-              <div className="prose prose-invert prose-sm max-w-none">
+              <div className="prose prose-invert prose-sm max-w-none break-all whitespace-pre-wrap !text-[11px] !leading-tight">
                 <Markdown
                   components={{
                     code({ node, inline, className, children, ...props }: any) {
