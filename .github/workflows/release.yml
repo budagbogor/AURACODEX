@@ -55,42 +55,9 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  build-electron:
-    name: Build Electron Windows Installer
-    runs-on: windows-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-    steps:
-      - name: Checkout Source
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Electron App
-        run: npm run electron:build
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Electron Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: electron-build
-          path: |
-            dist_electron/*.exe
-            dist_electron/**/*.exe
-          if-no-files-found: error
-          retention-days: 7
-
   publish-release:
     name: Publish GitHub Release
-    needs: [build-tauri, build-electron]
+    needs: [build-tauri]
     runs-on: ubuntu-latest
     # Only run this job if a tag starting with 'v' was pushed (e.g. v.10.0.1)
     if: startsWith(github.ref, 'refs/tags/v')
@@ -103,16 +70,10 @@ jobs:
           name: tauri-build
           path: tauri-artifacts
           
-      - name: Download Electron Build
-        uses: actions/download-artifact@v4
-        with:
-          name: electron-build
-          path: electron-artifacts
-          
       - name: Release to GitHub
         uses: softprops/action-gh-release@v2
         with:
           files: |
             tauri-artifacts/**/*
-            electron-artifacts/**/*
           generate_release_notes: true
+
