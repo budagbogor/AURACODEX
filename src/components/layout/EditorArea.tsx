@@ -61,44 +61,44 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
     <div className="flex-1 flex min-h-0 relative">
       {/* Welcome Screen when no files are open */}
       {files.length === 0 && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#1e1e1e] text-center p-6 space-y-4 overflow-y-auto">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#1e1e1e] text-center p-4 space-y-3 overflow-y-auto">
           <div className="flex items-center justify-center animate-[pulse_3s_ease-in-out_infinite] drop-shadow-[0_0_20px_rgba(59,130,246,0.2)]">
-            <AuraLogo size={70} className="drop-shadow-2xl" />
+            <AuraLogo size={50} className="drop-shadow-2xl" />
           </div>
           <div className="flex flex-col items-center gap-0.5">
-            <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">Welcome to Aura IDE</h2>
-            <p className="text-[#858585] text-[clamp(0.7rem,1.5vw,0.85rem)] max-w-sm mx-auto line-clamp-2 leading-relaxed italic">
+            <h2 className="text-lg md:text-xl font-bold text-white tracking-tight">Welcome to Aura IDE</h2>
+            <p className="text-[#858585] text-[clamp(0.65rem,1.2vw,0.8rem)] max-w-sm mx-auto line-clamp-2 leading-relaxed italic px-4">
               The next generation AI-powered development environment. Start by creating a new file or opening a folder.
             </p>
           </div>
-          <div className="flex flex-wrap justify-center gap-3 w-full max-w-4xl px-4">
-            <button onClick={openFolder} className="flex flex-col items-center gap-1.5 p-3 bg-[#252526]/50 backdrop-blur-md hover:bg-[#2d2d2d] rounded-xl border border-white/5 transition-all group hover:scale-105 active:scale-95 w-32">
-              <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                <FolderOpen size={18} className="text-blue-500 group-hover:scale-110 transition-transform" />
+          <div className="flex flex-wrap justify-center gap-2.5 w-full max-w-4xl px-4">
+            <button onClick={openFolder} className="flex flex-col items-center gap-1 p-2.5 bg-[#252526]/50 backdrop-blur-md hover:bg-[#2d2d2d] rounded-xl border border-white/5 transition-all group hover:scale-105 active:scale-95 w-28">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                <FolderOpen size={16} className="text-blue-500 group-hover:scale-110 transition-transform" />
               </div>
-              <span className="text-[11px] font-medium">Open Folder</span>
+              <span className="text-[10px] font-medium">Open Folder</span>
             </button>
-            <button onClick={onCreateProject} className="flex flex-col items-center gap-1.5 p-3 bg-[#252526]/50 backdrop-blur-md hover:bg-[#2d2d2d] rounded-xl border border-white/5 transition-all group hover:scale-105 active:scale-95 w-32">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors">
-                <FolderOpen size={18} className="text-gray-400 group-hover:scale-110 transition-transform" />
-                <Plus size={8} className="absolute ml-3 mt-3 text-gray-400 font-bold" />
+            <button onClick={onCreateProject} className="flex flex-col items-center gap-1 p-2.5 bg-[#252526]/50 backdrop-blur-md hover:bg-[#2d2d2d] rounded-xl border border-white/5 transition-all group hover:scale-105 active:scale-95 w-28">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors">
+                <FolderOpen size={16} className="text-gray-400 group-hover:scale-110 transition-transform" />
+                <Plus size={7} className="absolute ml-2.5 mt-2.5 text-gray-400 font-bold" />
               </div>
-              <span className="text-[11px] font-medium focus:text-gray-300 whitespace-nowrap">New Project</span>
+              <span className="text-[10px] font-medium focus:text-gray-300 whitespace-nowrap">New Project</span>
             </button>
             <button 
               onClick={() => setSidebarTab('github')} 
-              className="flex flex-col items-center gap-1.5 p-3 bg-[#252526]/50 backdrop-blur-md hover:bg-[#2d2d2d] rounded-xl border border-white/5 transition-all group hover:scale-105 active:scale-95 w-32"
+              className="flex flex-col items-center gap-1 p-2.5 bg-[#252526]/50 backdrop-blur-md hover:bg-[#2d2d2d] rounded-xl border border-white/5 transition-all group hover:scale-105 active:scale-95 w-28"
             >
-              <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
-                <Github size={18} className="text-purple-500 group-hover:scale-110 transition-transform" />
+              <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                <Github size={16} className="text-purple-500 group-hover:scale-110 transition-transform" />
               </div>
-              <span className="text-[11px] font-medium">Clone Repo</span>
+              <span className="text-[10px] font-medium">Clone Repo</span>
             </button>
-            <button onClick={createNewFile} className="flex flex-col items-center gap-1.5 p-3 bg-[#252526]/50 backdrop-blur-md hover:bg-[#2d2d2d] rounded-xl border border-white/5 transition-all group hover:scale-105 active:scale-95 w-32">
-              <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors">
-                <Plus size={18} className="text-indigo-500 group-hover:scale-110 transition-transform" />
+            <button onClick={createNewFile} className="flex flex-col items-center gap-1 p-2.5 bg-[#252526]/50 backdrop-blur-md hover:bg-[#2d2d2d] rounded-xl border border-white/5 transition-all group hover:scale-105 active:scale-95 w-28">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors">
+                <Plus size={16} className="text-indigo-500 group-hover:scale-110 transition-transform" />
               </div>
-              <span className="text-[11px] font-medium">New File</span>
+              <span className="text-[10px] font-medium">New File</span>
             </button>
             <button onClick={() => {
               const url = prompt('Enter GitHub Repository URL (e.g. https://github.com/user/repo):');
@@ -118,11 +118,11 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                   }
                 }
               }
-            }} className="flex flex-col items-center gap-1.5 p-3 bg-[#252526]/50 backdrop-blur-md hover:bg-[#2d2d2d] rounded-xl border border-white/5 transition-all group hover:scale-105 active:scale-95 w-32">
-              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-                <Globe size={18} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+            }} className="flex flex-col items-center gap-1 p-2.5 bg-[#252526]/50 backdrop-blur-md hover:bg-[#2d2d2d] rounded-xl border border-white/5 transition-all group hover:scale-105 active:scale-95 w-28">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                <Globe size={16} className="text-emerald-500 group-hover:scale-110 transition-transform" />
               </div>
-              <span className="text-[11px] font-medium whitespace-nowrap">Clone URL</span>
+              <span className="text-[10px] font-medium whitespace-nowrap">Clone URL</span>
             </button>
           </div>
           {/* Shortcuts removed (available in status bar) */}

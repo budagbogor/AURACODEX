@@ -214,13 +214,13 @@ const TreeItem: React.FC<{
         <div 
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-1.5 px-2 py-0.5 hover:bg-white/5 cursor-pointer group transition-colors"
-          style={{ paddingLeft: `${level * 12 + 8}px` }}
+          style={{ paddingLeft: `${level * 10 + 8}px` }}
         >
           <span className={cn("transition-transform duration-200", isOpen ? "rotate-90" : "")}>
             <ChevronRightIcon size={12} className="text-gray-500" />
           </span>
           {getFolderIcon(isOpen)}
-          <span className="text-[12px] text-gray-400 font-medium truncate">{item.name}</span>
+          <span className="text-[11px] text-gray-400 font-medium truncate">{item.name}</span>
         </div>
         {isOpen && item.children?.map(child => (
           <TreeItem 
@@ -241,10 +241,10 @@ const TreeItem: React.FC<{
       onClick={() => setActiveFileId(item.id)}
       onContextMenu={(e) => handleContextMenu(e, item.id)}
       className={cn(
-        "flex items-center gap-2 px-2 py-0.5 cursor-pointer text-[13px] transition-colors group relative border-l-2 border-transparent",
+        "flex items-center gap-2 px-2 py-0.5 cursor-pointer text-[12px] transition-colors group relative border-l-2 border-transparent",
         isSelected ? "bg-blue-600/10 text-blue-400 border-blue-500" : "hover:bg-white/5 text-[#cccccc]"
       )}
-      style={{ paddingLeft: `${level * 12 + 20}px` }}
+      style={{ paddingLeft: `${level * 10 + 20}px` }}
     >
       {getFileIcon(item.name)}
       <span className="truncate">{item.name}</span>
@@ -332,47 +332,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {/* Activity Bar */}
       <div className={cn(
-        "w-14 h-full bg-[#181818] flex flex-col items-center py-4 gap-4 z-50 glass-dark shrink-0",
+        "w-12 h-full bg-[#181818] flex flex-col items-center py-4 gap-3 z-50 glass-dark shrink-0",
         layoutMode === 'modern' ? "border-l border-white/5" : "border-r border-white/5"
       )}>
         <div 
           onClick={() => setSidebarTab('files')}
           title="Explorer (Ctrl+Shift+E)"
-          className={cn("p-2.5 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'files' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
+          className={cn("p-2 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'files' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
         >
-          <FileCode size={24} className={cn("transition-transform duration-200", sidebarTab === 'files' && "scale-110")} />
+          <FileCode size={20} className={cn("transition-transform duration-200", sidebarTab === 'files' && "scale-110")} />
           {sidebarTab === 'files' && <motion.div layoutId="activeTab" className="absolute left-[-12px] w-1 h-8 bg-blue-500 rounded-r-full" />}
         </div>
         <div 
           onClick={() => setSidebarTab('search')}
           title="Search (Ctrl+Shift+F)"
-          className={cn("p-2.5 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'search' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
+          className={cn("p-2 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'search' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
         >
-          <Search size={24} className={cn("transition-transform duration-200", sidebarTab === 'search' && "scale-110")} />
+          <Search size={20} className={cn("transition-transform duration-200", sidebarTab === 'search' && "scale-110")} />
           {sidebarTab === 'search' && <motion.div layoutId="activeTab" className="absolute left-[-12px] w-1 h-8 bg-blue-500 rounded-r-full" />}
         </div>
         <div 
           onClick={() => setSidebarTab('ai')}
           title="Aura AI Chat (Ctrl+Shift+A)"
-          className={cn("p-2.5 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'ai' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
+          className={cn("p-2 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'ai' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
         >
-          <Sparkles size={24} className={cn("transition-transform duration-200", sidebarTab === 'ai' && "scale-110")} />
+          <Sparkles size={20} className={cn("transition-transform duration-200", sidebarTab === 'ai' && "scale-110")} />
           {sidebarTab === 'ai' && <motion.div layoutId="activeTab" className="absolute left-[-12px] w-1 h-8 bg-blue-500 rounded-r-full" />}
         </div>
         <div 
           onClick={() => setSidebarTab('git')}
           title="Source Control (Ctrl+Shift+G)"
-          className={cn("p-2.5 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'git' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
+          className={cn("p-2 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'git' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
         >
-          <GitBranch size={24} className={cn("transition-transform duration-200", sidebarTab === 'git' && "scale-110")} />
+          <GitBranch size={20} className={cn("transition-transform duration-200", sidebarTab === 'git' && "scale-110")} />
           {sidebarTab === 'git' && <motion.div layoutId="activeTab" className="absolute left-[-12px] w-1 h-8 bg-blue-500 rounded-r-full" />}
         </div>
         <div 
           onClick={() => setSidebarTab('github')}
           title="GitHub Integration"
-          className={cn("p-2.5 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'github' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
+          className={cn("p-2 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'github' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
         >
-          <Github size={24} className={cn("transition-transform duration-200", sidebarTab === 'github' && "scale-110")} />
+          <Github size={20} className={cn("transition-transform duration-200", sidebarTab === 'github' && "scale-110")} />
           {githubConnected && (
             <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 border border-[#333] shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
           )}
@@ -381,33 +381,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div 
           onClick={() => setSidebarTab('browser')}
           title="Internal Browser"
-          className={cn("p-2.5 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'browser' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
+          className={cn("p-2 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'browser' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
         >
-          <Globe size={24} className={cn("transition-transform duration-200", sidebarTab === 'browser' && "scale-110")} />
+          <Globe size={20} className={cn("transition-transform duration-200", sidebarTab === 'browser' && "scale-110")} />
           {sidebarTab === 'browser' && <motion.div layoutId="activeTab" className="absolute left-[-12px] w-1 h-8 bg-blue-500 rounded-r-full" />}
         </div>
         <div 
           onClick={() => setSidebarTab('database')}
           title="Database Explorer"
-          className={cn("p-2.5 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'database' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
+          className={cn("p-2 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'database' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
         >
-          <Database size={24} className={cn("transition-transform duration-200", sidebarTab === 'database' && "scale-110")} />
+          <Database size={20} className={cn("transition-transform duration-200", sidebarTab === 'database' && "scale-110")} />
           {sidebarTab === 'database' && <motion.div layoutId="activeTab" className="absolute left-[-12px] w-1 h-8 bg-blue-500 rounded-r-full" />}
         </div>
         <div className="mt-auto flex flex-col gap-2 w-full items-center">
           <div 
             onClick={() => setShowGuideModal(true)}
             title="Panduan Workflow"
-            className="p-2.5 cursor-pointer transition-all duration-200 rounded-xl text-[#858585] hover:text-white hover:bg-white/5"
+            className="p-2 cursor-pointer transition-all duration-200 rounded-xl text-[#858585] hover:text-white hover:bg-white/5"
           >
-            <HelpCircle size={24} />
+            <HelpCircle size={20} />
           </div>
           <div 
             onClick={() => setSidebarTab('settings')}
             title="Settings"
-            className={cn("p-2.5 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'settings' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
+            className={cn("p-2 cursor-pointer transition-all duration-200 rounded-xl group relative", sidebarTab === 'settings' ? "text-white bg-blue-600/20 shadow-lg shadow-blue-500/10" : "text-[#858585] hover:text-white hover:bg-white/5")}
         >
-            <Settings size={24} className={cn("transition-transform duration-200", sidebarTab === 'settings' && "scale-110")} />
+            <Settings size={20} className={cn("transition-transform duration-200", sidebarTab === 'settings' && "scale-110")} />
             {sidebarTab === 'settings' && <motion.div layoutId="activeTab" className="absolute left-[-12px] w-1 h-8 bg-blue-500 rounded-r-full" />}
           </div>
         </div>
@@ -438,7 +438,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
         
         {/* Sidebar Header */}
-        <div className="p-3 text-[11px] uppercase tracking-widest font-black text-[#bbbbbb] flex justify-between items-center border-b border-white/5 bg-[#252526]/50 backdrop-blur-sm sticky top-0 z-10 min-h-[44px]">
+        <div className="p-2 text-[10px] uppercase tracking-widest font-black text-[#bbbbbb] flex justify-between items-center border-b border-white/5 bg-[#252526]/50 backdrop-blur-sm sticky top-0 z-10 min-h-[40px]">
           <span className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
             {sidebarTab === 'files' && ''}
@@ -829,41 +829,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="p-4 space-y-6 custom-scrollbar h-full overflow-y-auto"
+                className="p-3 space-y-4 custom-scrollbar h-full overflow-y-auto"
               >
                 {/* Visual Section */}
-                <section className="space-y-3">
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-blue-500 flex items-center gap-2">
-                    <Layout size={14} /> Appearance & Layout
+                <section className="space-y-2">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-blue-500 flex items-center gap-2">
+                    <Layout size={12} /> Appearance & Layout
                   </h3>
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="flex items-center justify-between p-3 bg-[#333333]/50 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="flex items-center justify-between p-2.5 bg-[#333333]/50 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
                       <div className="space-y-0.5">
-                        <p className="text-[12px] font-medium text-white italic">Layout Presets</p>
-                        <p className="text-[10px] text-gray-500">Quick toggle between modes</p>
+                        <p className="text-[11px] font-medium text-white italic">Layout Presets</p>
+                        <p className="text-[9px] text-gray-500">Quick toggle modes</p>
                       </div>
                       <div className="flex gap-1.5">
-                        <button onClick={() => relayout('default')} className="px-3 py-1.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-[10px] font-bold hover:bg-blue-600 hover:text-white transition-all">DEFAULT LOOK</button>
-                        <button onClick={() => relayout('zen')} className="px-3 py-1.5 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg text-[10px] font-bold hover:bg-purple-600 hover:text-white transition-all">ZEN ONLY</button>
+                        <button onClick={() => relayout('default')} className="px-2 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-[9px] font-bold hover:bg-blue-600 hover:text-white transition-all">DEFAULT</button>
+                        <button onClick={() => relayout('zen')} className="px-2 py-1 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg text-[9px] font-bold hover:bg-purple-600 hover:text-white transition-all">ZEN</button>
                       </div>
                     </div>
                   </div>
                 </section>
 
                 {/* AI Configuration Section */}
-                <section className="space-y-3">
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-purple-500 flex items-center gap-2">
-                    <Sparkles size={14} /> AI Intelligence Center
+                <section className="space-y-2">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-purple-500 flex items-center gap-2">
+                    <Sparkles size={12} /> AI Intelligence Center
                   </h3>
                   
-                  <div className="space-y-3 bg-black/20 p-3 rounded-xl border border-white/5">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase">Provider & Model</label>
-                      <div className="flex flex-col gap-2">
+                  <div className="space-y-3 bg-black/20 p-2.5 rounded-xl border border-white/5">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-bold text-gray-500 uppercase">Provider & Model</label>
+                      <div className="flex flex-col gap-1.5">
                         <select 
                           value={aiProvider}
                           onChange={(e: any) => setAiProvider(e.target.value)}
-                          className="bg-[#3c3c3c] border border-white/10 rounded-lg px-3 py-2 text-[12px] outline-none text-white focus:border-purple-500/50"
+                          className="bg-[#3c3c3c] border border-white/10 rounded-lg px-2 py-1.5 text-[11px] outline-none text-white focus:border-purple-500/50"
                         >
                           <option value="gemini">Google Gemini</option>
                           <option value="openrouter">OpenRouter</option>
@@ -878,7 +878,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             else if (aiProvider === 'bytez') setBytezModel(e.target.value);
                             else setSumopodModel(e.target.value);
                           }}
-                          className="bg-[#3c3c3c] border border-white/10 rounded-lg px-3 py-2 text-[12px] outline-none text-white focus:border-purple-500/50 w-full"
+                          className="bg-[#3c3c3c] border border-white/10 rounded-lg px-2 py-1.5 text-[11px] outline-none text-white focus:border-purple-500/50 w-full"
                         >
                           {aiProvider === 'gemini' && GEMINI_MODELS.map(m => (
                             <option key={m.id} value={m.id}>{m.name}</option>
@@ -901,11 +901,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase">API Key Authorization</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-bold text-gray-500 uppercase">API Key Authorization</label>
                       <input 
                         type="password" 
-                        placeholder={aiProvider === 'gemini' ? "Gemini API Key..." : aiProvider === 'openrouter' ? "OpenRouter Token..." : aiProvider === 'bytez' ? "Bytez Key..." : "SumoPod Key..."}
+                        placeholder={aiProvider === 'gemini' ? "Gemini Key..." : aiProvider === 'openrouter' ? "Token..." : aiProvider === 'bytez' ? "Bytez Key..." : "SumoPod Key..."}
                         value={aiProvider === 'gemini' ? geminiApiKey : aiProvider === 'openrouter' ? openRouterApiKey : aiProvider === 'bytez' ? bytezApiKey : sumopodApiKey}
                         onChange={(e) => {
                           if (aiProvider === 'gemini') setGeminiApiKey(e.target.value);
@@ -913,7 +913,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           else if (aiProvider === 'bytez') setBytezApiKey(e.target.value);
                           else setSumopodApiKey(e.target.value);
                         }}
-                        className="w-full bg-[#3c3c3c] border border-white/10 rounded-lg px-3 py-2 text-[12px] outline-none text-white focus:border-purple-500/50"
+                        className="w-full bg-[#3c3c3c] border border-white/10 rounded-lg px-2 py-1.5 text-[11px] outline-none text-white focus:border-purple-500/50"
                       />
                     </div>
                   </div>
@@ -921,45 +921,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </section>
 
                 {/* Integrations Section */}
-                <section className="space-y-4">
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#adbac7] flex items-center gap-2 italic">
-                    <Github size={14} /> Service Integrations
+                <section className="space-y-3">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#adbac7] flex items-center gap-2 italic">
+                    <Github size={12} /> Service Integrations
                   </h3>
                   
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {/* GitHub Config */}
-                    <div className="p-4 bg-black/20 rounded-2xl border border-white/5 space-y-3">
+                    <div className="p-3 bg-black/20 rounded-2xl border border-white/5 space-y-2">
                       <div className="flex items-center gap-2">
-                        <Github size={16} className="text-[#adbac7]" />
-                        <span className="text-[12px] font-bold">GitHub Personal Access Token</span>
+                        <Github size={14} className="text-[#adbac7]" />
+                        <span className="text-[11px] font-bold">GitHub Token</span>
                       </div>
                       <input 
                         type="password" 
                         placeholder="ghp_xxxxxxxxxxxx"
                         value={githubToken}
                         onChange={(e) => setGithubToken(e.target.value)}
-                        className="w-full bg-[#3c3c3c] border border-white/10 rounded-lg px-3 py-2 text-[12px] outline-none focus:border-blue-500/50"
+                        className="w-full bg-[#3c3c3c] border border-white/10 rounded-lg px-2 py-1.5 text-[11px] outline-none focus:border-blue-500/50"
                       />
                       <ConnectionStatus 
                         status={testingStatus.github || 'idle'} 
                         error={testError.github}
                         onTest={testGithubConnection}
-                        label="Refresh Connectivity"
+                        label="Refresh"
                       />
                     </div>
 
 
 
                     {/* Reset Connections Button */}
-                    <div className="pt-2">
+                    <div className="pt-1">
                       <button 
                         onClick={resetAllConnections}
-                        className="w-full flex items-center justify-center gap-2 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/50 rounded-2xl text-[12px] font-bold text-red-400 transition-all group"
+                        className="w-full flex items-center justify-center gap-2 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/50 rounded-2xl text-[11px] font-bold text-red-400 transition-all group"
                       >
-                        <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                        <RefreshCw size={12} className="group-hover:rotate-180 transition-transform duration-500" />
                         Reset All Connections
                       </button>
-                      <p className="text-[10px] text-gray-600 mt-2 text-center px-4 italic">
+                      <p className="text-[9px] text-gray-600 mt-1.5 text-center px-4 italic">
                         Menghapus seluruh API Keys, Token, dan data login dari memori IDE.
                       </p>
                     </div>
@@ -967,71 +967,71 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </section>
 
                 {/* MCP PROCOL SECTION */}
-                <section className="space-y-4">
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-orange-500 flex items-center gap-2">
-                    <ExternalLink size={14} /> MCP Server Protocol
+                <section className="space-y-3">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-orange-500 flex items-center gap-2">
+                    <ExternalLink size={12} /> MCP Server Protocol
                   </h3>
                   
-                  <div className="bg-orange-500/5 border border-orange-500/20 p-4 rounded-2xl space-y-4">
+                  <div className="bg-orange-500/5 border border-orange-500/20 p-3 rounded-2xl space-y-3">
                     {/* Context7 Native Integration Toggle */}
                     <div 
                       onClick={() => setContext7Mode(!context7Mode)}
                       className={cn(
-                        "flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer group mb-2",
+                        "flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer group mb-1",
                         context7Mode ? "bg-orange-500/10 border-orange-500/30" : "bg-white/5 border-white/5 hover:border-white/10"
                       )}
                     >
                       <div className="space-y-0.5">
-                        <p className={cn("text-[12px] font-bold flex items-center gap-1.5", context7Mode ? "text-orange-400" : "text-gray-300")}>
-                          <Cpu size={14} /> Context7 Mode (Native)
+                        <p className={cn("text-[11px] font-bold flex items-center gap-1.5", context7Mode ? "text-orange-400" : "text-gray-300")}>
+                          <Cpu size={12} /> Context7 Mode (Native)
                         </p>
-                        <p className="text-[10px] text-gray-500 leading-tight">Auto-Documentation MCP Server (&gt;2000 libraries)</p>
+                        <p className="text-[9px] text-gray-500 leading-tight">Auto-Documentation MCP Server</p>
                       </div>
-                      <div className={cn("w-8 h-4 rounded-full relative transition-colors", context7Mode ? "bg-orange-500" : "bg-gray-700")}>
-                        <div className={cn("absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all", context7Mode ? "left-4.5" : "left-0.5")} />
+                      <div className={cn("w-7 h-3.5 rounded-full relative transition-colors", context7Mode ? "bg-orange-500" : "bg-gray-700")}>
+                        <div className={cn("absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all", context7Mode ? "left-4" : "left-0.5")} />
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase">Load MCP Template</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-bold text-gray-500 uppercase">Load MCP Template</label>
                       <select 
                         value={selectedMcpTemplateIdx === 'custom' ? 'custom' : selectedMcpTemplateIdx}
                         onChange={(e: any) => setSelectedMcpTemplateIdx(e.target.value === 'custom' ? 'custom' : parseInt(e.target.value))}
-                        className="w-full bg-[#3c3c3c] border border-white/10 rounded-lg px-3 py-2 text-[12px] outline-none"
+                        className="w-full bg-[#3c3c3c] border border-white/10 rounded-lg px-2 py-1.5 text-[11px] outline-none"
                       >
                         {MCP_TEMPLATES.map((t, i) => <option key={i} value={i}>{t.label}</option>)}
                         <option value="custom">Custom Implementation</option>
                       </select>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase">Server Host / Endpoint</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-bold text-gray-500 uppercase">Server Host / Endpoint</label>
                       <input 
                         type="text" 
                         value={newMcpUrl}
                         onChange={(e) => setNewMcpUrl(e.target.value)}
-                        className="w-full bg-[#3c3c3c] border border-white/10 rounded-xl px-3 py-2 text-[11px] outline-none font-mono"
+                        className="w-full bg-[#3c3c3c] border border-white/10 rounded-xl px-2 py-1.5 text-[10px] outline-none font-mono"
                         placeholder="https://mcp-server.example.com/sse"
                       />
                     </div>
 
                     <button 
-                      className="w-full py-2 bg-orange-600 hover:bg-orange-500 text-white text-[11px] font-bold rounded-xl shadow-lg shadow-orange-500/10 transition-all flex items-center justify-center gap-2"
+                      className="w-full py-1.5 bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-bold rounded-xl shadow-lg shadow-orange-500/10 transition-all flex items-center justify-center gap-2"
                     >
-                      <Plus size={14} /> Register MCP Server
+                      <Plus size={12} /> Register MCP Server
                     </button>
                     
-                    <div className="pt-2 border-t border-white/5 space-y-2">
-                      <p className="text-[10px] text-gray-500 italic">Connected Servers:</p>
+                    <div className="pt-1.5 border-t border-white/5 space-y-1.5">
+                      <p className="text-[9px] text-gray-500 italic">Connected Servers:</p>
                       {mcpServers.length === 0 ? (
-                        <p className="text-[10px] text-gray-700 italic text-center">No MCP servers registered</p>
+                        <p className="text-[9px] text-gray-700 italic text-center">No MCP servers registered</p>
                       ) : (
                         mcpServers.map((s, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5">
-                            <span className="text-[11px] font-bold text-orange-400">{s.name}</span>
+                          <div key={i} className="flex items-center justify-between p-1.5 bg-white/5 rounded-lg border border-white/5">
+                            <span className="text-[10px] font-bold text-orange-400">{s.name}</span>
                             <div className="flex gap-1">
-                              <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                              <button onClick={() => setShowMcpLogsFor(s.name)} className="text-[10px] hover:text-white transition-colors">Logs</button>
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              <button onClick={() => setShowMcpLogsFor(s.name)} className="text-[9px] hover:text-white transition-colors">Logs</button>
                             </div>
                           </div>
                         ))
@@ -1040,9 +1040,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 </section>
 
-                <div className="py-10 text-center opacity-30">
-                  <AuraLogo size={40} className="mx-auto mb-2" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest italic">Aura AI IDE — v4.1.0 Premium</p>
+                <div className="py-6 text-center opacity-30">
+                  <AuraLogo size={32} className="mx-auto mb-1.5" />
+                  <p className="text-[9px] font-bold uppercase tracking-widest italic">Aura AI IDE — v1.0.2 Premium</p>
                 </div>
               </motion.div>
             )}
