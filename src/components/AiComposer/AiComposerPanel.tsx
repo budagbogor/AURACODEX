@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateComposerStream, parseComposerResponse } from '../../services/ai/composerService';
 import { auditProjectStructure } from '../../services/ai/structureVerifier';
+import { generateAuraRules } from '../../services/ai/auraRules';
 import { CodeBlockPreview } from './CodeBlockPreview';
 import { FileItem } from '../../types';
 import { Send, Bot, User, RefreshCw, Cpu, Loader2 } from 'lucide-react';
@@ -160,10 +161,25 @@ export const AiComposerPanel: React.FC<AiComposerPanelProps> = ({
         }
       }
 
-      if (fileCount > 0 && appendTerminalOutput) {
-        appendTerminalOutput(`[AI SUCCESS] Berhasil menerapkan ${fileCount} file ke Editor.`);
-        
-        // --- ELITE DESIGN & STRUCTURE AUDIT ---
+        if (fileCount > 0 && appendTerminalOutput) {
+           appendTerminalOutput(`[AI SUCCESS] Berhasil menerapkan ${fileCount} file ke Editor.`);
+           
+           // --- SECURITY HOOK (v1.4.0) ---
+           const secretRegex = /(sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{30,}|AKIA[0-9A-Z]{16}|xox[bpg]-[0-9]+-[a-zA-Z0-9]+)/g;
+           if (secretRegex.test(fullResponse)) {
+              appendTerminalOutput(`[AURA SECURITY] ⚠️ Terdeteksi data sensitif (API Key/Token) dalam kode! Mohon pindahkan ke file .env segera.`);
+           }
+
+           // --- AURA RULES GENERATION (v1.4.0) ---
+           const rules = generateAuraRules(parseComposerResponse(fullResponse), projectTree);
+           rules.forEach(rule => {
+              onApplyCode(rule.path, rule.content, 'create_or_modify');
+           });
+           if (rules.length > 0) {
+              appendTerminalOutput(`[AURA RULES] Otomatis membuat ${rules.length} panduan proyek di .aura/rules/`);
+           }
+
+           // --- ELITE DESIGN & STRUCTURE AUDIT ---
         const missingFiles = auditProjectStructure(parseComposerResponse(fullResponse), projectTree);
         if (missingFiles.length > 0) {
            appendTerminalOutput(`[AURA ELITE] Mendeteksi ketidakkonsistenan Desain & Struktur.`);

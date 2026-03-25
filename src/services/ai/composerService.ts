@@ -32,7 +32,20 @@ CODING EXCELLENCE:
 
 STRICT RULES:
 - Respond in Indonesian (Bahasa Indonesia).
-- Be the most efficient and proactive coder in the world.`;
+- Be the most efficient and proactive coder in the world.
+
+## AURA ADVANCED SKILLS (WORKFLOWS)
+Gunakan alur kerja ini untuk tugas-tugas spesifik:
+
+### SKILL [TDD-MASTER]:
+Alur: 1. Definisikan Interface -> 2. Buat Test (RED) -> 3. Implementasi Minimal (GREEN) -> 4. Refactor -> 5. Verifikasi Coverage.
+
+### SKILL [SECURITY-AUDITOR]:
+Alur: 1. Scan Secrets -> 2. Audit Input Validation -> 3. Check Dependency Vulnerabilities -> 4. Fix & Harden.
+
+### SKILL [PERFORMANCE-OPTIMIZER]:
+Alur: 1. Identifikasi Bottleneck -> 2. Implement Caching/Memoization -> 3. Optimize Asset Loading -> 4. Verify Speed/Lighthouse.
+`;
 
 const DOMAIN_EXPERTISE: Record<string, string> = {
   'Full Stack': `SKILL [MASTER ARCHITECT]:
