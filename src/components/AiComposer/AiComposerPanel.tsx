@@ -113,6 +113,18 @@ export const AiComposerPanel: React.FC<AiComposerPanelProps> = ({
             const action = match[1] === 'delete' ? 'delete' : 'create_or_modify';
             onApplyCode(match[2].trim(), match[3], action);
           }
+          
+          // Streaming Terminal Commands - Execute as soon as block is closed
+          const cmdStreamingRegex = /```(?:command:([^\n]*)|command)\n?([\s\S]*?)```/g;
+          let streamingMatch;
+          while ((streamingMatch = cmdStreamingRegex.exec(fullResponse)) !== null) {
+             const cmd = (streamingMatch[1] || streamingMatch[2]).trim();
+             if (cmd && !appliedCommands.has(cmd)) {
+                if (onExecuteCommand) onExecuteCommand(cmd);
+                appliedCommands.add(cmd);
+             }
+          }
+
           lastApplyUpdate = now;
         }
       }

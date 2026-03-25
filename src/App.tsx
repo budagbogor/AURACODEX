@@ -155,81 +155,7 @@ interface CodeProblem {
 
 
 
-// --- Desktop Title Bar (Premium Trae/VS Code Style) ---
-const TitleBar = ({ projectName }: { projectName: string }) => {
-  const [tauriWindow, setTauriWindow] = useState<any>(null);
 
-  useEffect(() => {
-    if (isTauri) {
-      import('@tauri-apps/api/window').then(m => setTauriWindow(m.getCurrentWindow()));
-    }
-  }, []);
-
-  if (!isTauri && !isElectron) return null;
-
-  return (
-    <div className="h-10 bg-[#0c0c0c] border-b border-white/5 flex items-center justify-between px-4 select-none z-50 sticky top-0 relative">
-      {/* Drag Region Overlay */}
-      <div 
-        data-tauri-drag-region 
-        className="absolute inset-0 z-0" 
-        style={{ WebkitAppRegion: isElectron ? 'drag' : undefined } as any}
-      />
-
-      {/* Left Area: Logo & Name */}
-      <div className="flex items-center gap-2 pointer-events-none z-10 relative">
-        <AuraLogo size={18} />
-        <span className="text-[11px] font-bold text-gray-400 tracking-widest uppercase">Aura AI IDE</span>
-      </div>
-      
-      {/* Center Area: Folder & Search */}
-      <div className="flex-1 flex justify-center h-full items-center pointer-events-none gap-4 z-10 relative">
-        <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md">
-          <Folder size={12} className="text-blue-400" />
-          <span className="text-[11px] font-bold text-blue-300 uppercase tracking-tight">{projectName}</span>
-        </div>
-        <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-md text-[11px] text-gray-400 flex items-center gap-2">
-          <Search size={12} />
-          <span>Search or type a command... (Ctrl+P)</span>
-        </div>
-      </div>
-
-      {/* Right Area: Windows Controls */}
-      <div className="flex items-center z-20 relative">
-        <button 
-          onClick={(e) => { 
-            e.stopPropagation(); 
-            if (isTauri) tauriWindow?.minimize();
-            else if (isElectron) (window as any).electronAPI.minimize();
-          }} 
-          className="p-2 hover:bg-white/10 text-gray-400 transition-colors cursor-pointer"
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12"><rect fill="currentColor" width="10" height="1" x="1" y="6"/></svg>
-        </button>
-        <button 
-          onClick={(e) => { 
-            e.stopPropagation(); 
-            if (isTauri) tauriWindow?.toggleMaximize();
-            else if (isElectron) (window as any).electronAPI.maximize();
-          }} 
-          className="p-2 hover:bg-white/10 text-gray-400 transition-colors cursor-pointer"
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12"><rect fill="none" stroke="currentColor" width="9" height="9" x="1.5" y="1.5"/></svg>
-        </button>
-        <button 
-          onClick={(e) => { 
-            e.stopPropagation(); 
-            if (isTauri) tauriWindow?.close();
-            else if (isElectron) (window as any).electronAPI.close();
-          }} 
-          className="p-2 hover:bg-red-500/80 hover:text-white text-gray-400 transition-colors cursor-pointer"
-        >
-          <X size={14} />
-        </button>
-      </div>
-    </div>
-  );
-};
 
 export default function App() {
   const [TauriCommand, setTauriCommand] = useState<any>(null);
@@ -1511,20 +1437,25 @@ Integrations:
 
         // --- UNIVERSAL SHELL EXECUTION (Tauri v2 Standard) ---
         let cmdInstance;
+        const isNpm = val.trim().startsWith('npm');
+        
         try {
-          // Setup the command listener first
-          cmdInstance = TauriCommand.create(
-            'powershell',
-            ['-NoLogo', '-NoProfile', '-Command', val],
-            { cwd: normalizedCwd }
-          );
-        } catch (psErr: any) {
-          // Fallback to cmd.exe
-          cmdInstance = TauriCommand.create(
-            'cmd',
-            ['/C', val],
-            { cwd: normalizedCwd }
-          );
+          if (isTauri && window.navigator.platform.includes('Win')) {
+            // Windows Optimization: Use cmd /C for npm to ensure better path resolution
+            if (isNpm) {
+               appendOutput(`[SYSTEM] Executing via CMD: ${val}`);
+               cmdInstance = TauriCommand.create('cmd', ['/C', val], { cwd: normalizedCwd });
+            } else {
+               appendOutput(`[SYSTEM] Executing via PowerShell: ${val}`);
+               cmdInstance = TauriCommand.create('powershell', ['-NoLogo', '-NoProfile', '-Command', val], { cwd: normalizedCwd });
+            }
+          } else {
+            // Fallback for other OS or non-npm
+            cmdInstance = TauriCommand.create('powershell', ['-NoLogo', '-NoProfile', '-Command', val], { cwd: normalizedCwd });
+          }
+        } catch (err: any) {
+          appendOutput(`[SYSTEM] Initial attempt failed, using fallback cmd...`);
+          cmdInstance = TauriCommand.create('cmd', ['/C', val], { cwd: normalizedCwd });
         }
 
         if (!cmdInstance) throw new Error("Gagal menginisialisasi Command instance.");
@@ -1634,7 +1565,7 @@ Integrations:
 
     return (
     <div className="h-[100dvh] w-full bg-[#1e1e1e] text-[#cccccc] flex flex-col overflow-hidden font-sans selection:bg-blue-500/30 relative">
-      <TitleBar projectName={projectName} />
+
       
       {/* Top Menu Bar Professional */}
       <div className="h-8 bg-[#1e1e1e] border-b border-white/5 flex items-center px-4 text-[12px] text-[#cccccc] gap-1 shrink-0 z-[60] relative">
