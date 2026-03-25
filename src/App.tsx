@@ -2162,6 +2162,7 @@ Integrations:
               autoFixMessage={autoFixMsg}
               onExecuteCommand={executeCommand}
               onApplyCode={handleApplyCode}
+              nativeProjectPath={nativeProjectPath}
             />
           </div>
         </div>

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { generateComposerStream, parseComposerResponse } from '../../services/ai/composerService';
 import { auditProjectStructure } from '../../services/ai/structureVerifier';
 import { generateAuraRules } from '../../services/ai/auraRules';
+import { memoryManager } from '../../services/ai/memoryManager';
 import { CodeBlockPreview } from './CodeBlockPreview';
 import { FileItem } from '../../types';
 import { Send, Bot, User, RefreshCw, Cpu, Loader2, Globe, Sparkles } from 'lucide-react';
@@ -23,6 +24,7 @@ interface AiComposerPanelProps {
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   autoFixTrigger?: number;
   autoFixMessage?: string;
+  nativeProjectPath?: string | null;
 }
 
 interface Message {
@@ -45,7 +47,8 @@ export const AiComposerPanel: React.FC<AiComposerPanelProps> = ({
   messages,
   setMessages,
   autoFixTrigger,
-  autoFixMessage
+  autoFixMessage,
+  nativeProjectPath
 }) => {
   const [input, setInput] = useState('');
   const [category, setCategory] = useState('Auto');
@@ -159,6 +162,11 @@ export const AiComposerPanel: React.FC<AiComposerPanelProps> = ({
           if (onExecuteCommand) onExecuteCommand(cmd);
           appliedCommands.add(cmd);
         }
+      }
+
+      // --- MEMORY EXTRACTION (v2.3.0) ---
+      if (nativeProjectPath) {
+        await memoryManager.extractAndMerge(nativeProjectPath, fullResponse);
       }
 
         if (fileCount > 0 && appendTerminalOutput) {
