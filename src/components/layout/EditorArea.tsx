@@ -7,6 +7,15 @@ import { getFileIcon } from '@/utils/icons';
 import { AuraLogo } from '@/components/layout/AuraLogo';
 import { FileItem } from '@/types';
 import { WorkflowDiagram } from '@/components/features/WorkflowDiagram';
+import { StagingArea } from '@/components/layout/StagingArea';
+
+interface StagingFile {
+  path: string;
+  originalContent: string;
+  newContent: string;
+  action: 'create_or_modify' | 'delete';
+  status: 'pending' | 'accepted' | 'rejected';
+}
 
 interface EditorAreaProps {
   files: FileItem[];
@@ -23,6 +32,10 @@ interface EditorAreaProps {
   createNewFile: () => void;
   onCreateProject: () => void;
   handleCloneRepo: (repo: any) => void;
+  stagingFiles: StagingFile[];
+  onAcceptStaging: () => void;
+  onDiscardStaging: () => void;
+  onUpdateStagingStatus: (path: string, status: 'accepted' | 'rejected') => void;
 }
 
 export const EditorArea: React.FC<EditorAreaProps> = ({
@@ -39,7 +52,11 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   setSidebarTab,
   createNewFile,
   onCreateProject,
-  handleCloneRepo
+  handleCloneRepo,
+  stagingFiles,
+  onAcceptStaging,
+  onDiscardStaging,
+  onUpdateStagingStatus
 }) => {
   return (
     <div className="flex-1 flex min-h-0 relative">
@@ -114,6 +131,19 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
 
           {/* Workflow Diagram Section */}
           <WorkflowDiagram />
+        </div>
+      )}
+      
+      {/* Staging Area - v2.5.0 Professional Code Review */}
+      {stagingFiles.length > 0 && (
+        <div className="absolute inset-x-4 inset-y-4 z-[40]">
+           <StagingArea 
+             files={stagingFiles}
+             onAcceptAll={onAcceptStaging}
+             onDiscardAll={onDiscardStaging}
+             onUpdateFileStatus={onUpdateStagingStatus}
+             onClose={onDiscardStaging}
+           />
         </div>
       )}
       

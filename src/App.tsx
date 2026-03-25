@@ -132,6 +132,14 @@ interface FileItem {
   lastModified?: number;
 }
 
+interface StagingFile {
+  path: string;
+  originalContent: string;
+  newContent: string;
+  action: 'create_or_modify' | 'delete';
+  status: 'pending' | 'accepted' | 'rejected';
+}
+
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -164,6 +172,7 @@ export default function App() {
   const [tauriFs, setTauriFs] = useState<any>(null);
   const [nativeProjectPath, setNativeProjectPath] = useState<string | null>(null);
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+  const [stagingFiles, setStagingFiles] = useState<StagingFile[]>([]);
 
   const activeProcessRef = useRef<any>(null);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
@@ -1300,6 +1309,52 @@ Integrations:
     if (!isDelete && activeFileId !== path) setActiveFileId(path);
   };
 
+  const handleStageCode = (path: string, content: string, action: 'create_or_modify' | 'delete' = 'create_or_modify') => {
+    setStagingFiles(prev => {
+      const existingIdx = prev.findIndex(f => f.path === path);
+      const originalFile = files.find(f => f.id === path || f.name === path);
+      const originalContent = originalFile ? originalFile.content : "";
+
+      if (existingIdx !== -1) {
+        const updated = [...prev];
+        updated[existingIdx] = { 
+          ...updated[existingIdx], 
+          newContent: content, 
+          action,
+          status: 'pending' 
+        };
+        return updated;
+      }
+
+      return [...prev, {
+        path,
+        originalContent,
+        newContent: content,
+        action,
+        status: 'pending'
+      }];
+    });
+  };
+
+  const handleAcceptStaging = async () => {
+    for (const sFile of stagingFiles) {
+      if (sFile.status !== 'rejected') {
+        await handleApplyCode(sFile.path, sFile.newContent, sFile.action);
+      }
+    }
+    setStagingFiles([]);
+    appendTerminalOutput(`[AI] ${stagingFiles.length} file telah diterapkan ke project.`);
+  };
+
+  const handleDiscardStaging = () => {
+    setStagingFiles([]);
+    appendTerminalOutput(`[AI] Perubahan dibatalkan.`);
+  };
+
+  const handleUpdateStagingStatus = (path: string, status: 'accepted' | 'rejected') => {
+    setStagingFiles(prev => prev.map(f => f.path === path ? { ...f, status } : f));
+  };
+
   const handleAutoPreview = (force: boolean = false) => {
     appendTerminalOutput('[AURA] Preview internal telah dihapus. Silakan gunakan browser sistem (Chrome/Edge/dll) untuk melihat perubahan pada localhost.');
   };
@@ -2082,6 +2137,10 @@ Integrations:
             setSidebarTab={setSidebarTab}
             createNewFile={createNewFile}
             handleCloneRepo={handleCloneRepo}
+            stagingFiles={stagingFiles}
+            onAcceptStaging={handleAcceptStaging}
+            onDiscardStaging={handleDiscardStaging}
+            onUpdateStagingStatus={handleUpdateStagingStatus}
           />
         </div>
       </div>

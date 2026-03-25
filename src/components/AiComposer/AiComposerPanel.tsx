@@ -3,9 +3,8 @@ import { generateComposerStream, parseComposerResponse } from '../../services/ai
 import { auditProjectStructure } from '../../services/ai/structureVerifier';
 import { generateAuraRules } from '../../services/ai/auraRules';
 import { memoryManager } from '../../services/ai/memoryManager';
-import { CodeBlockPreview } from './CodeBlockPreview';
 import { FileItem } from '../../types';
-import { Send, Bot, User, RefreshCw, Cpu, Loader2, Globe, Sparkles } from 'lucide-react';
+import { Send, Bot, User, RefreshCw, Cpu, Loader2, Globe, Sparkles, FileCode } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import Markdown from 'react-markdown';
 
@@ -265,20 +264,18 @@ export const AiComposerPanel: React.FC<AiComposerPanelProps> = ({
                               ? "bg-blue-500/10 border-blue-500/30 text-blue-400 animate-pulse" 
                               : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                           )}>
-                            <span className="flex items-center gap-2 font-mono break-words font-bold min-w-0 flex-1">
-                              <span className="opacity-50 shrink-0">File:</span> 
-                              <span className="truncate hover:whitespace-normal hover:break-all transition-all">{fileName}</span>
-                            </span>
-                            <span className={cn(
-                              "flex items-center gap-1.5 px-2 py-1 rounded-lg font-black uppercase tracking-wider text-[9px] shrink-0",
-                              isWriting ? "bg-blue-500/20 text-blue-300" : "bg-emerald-500/20 text-emerald-300"
-                            )}>
-                              <span className={cn(
-                                "w-1.5 h-1.5 rounded-full",
-                                isWriting ? "bg-blue-400" : "bg-emerald-400"
-                              )} />
-                              {isWriting ? "Sedang Di Tulis..." : "Selesai"}
-                            </span>
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                               <FileCode size={14} className={isWriting ? "text-blue-400" : "text-emerald-400"} />
+                               <span className="font-mono font-bold truncate">/ {fileName}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                               <span className={cn(
+                                 "px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest",
+                                 isWriting ? "bg-blue-500/20 text-blue-300" : "bg-emerald-500/20 text-emerald-300"
+                               )}>
+                                 {isWriting ? "Writing to Staging..." : "Staged"}
+                               </span>
+                            </div>
                           </div>
                         );
                       }
