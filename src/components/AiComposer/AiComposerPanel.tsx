@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateComposerStream, parseComposerResponse } from '../../services/ai/composerService';
+import { auditProjectStructure } from '../../services/ai/structureVerifier';
 import { CodeBlockPreview } from './CodeBlockPreview';
 import { FileItem } from '../../types';
 import { Send, Bot, User, RefreshCw, Cpu, Loader2 } from 'lucide-react';
@@ -64,7 +65,7 @@ export const AiComposerPanel: React.FC<AiComposerPanelProps> = ({
     }
   }, [autoFixTrigger]);
 
-  const handleSend = async (overrideMsg?: string) => {
+  const handleSend = async (overrideMsg?: string, isAutoCorrection: boolean = false) => {
     const userMessage = typeof overrideMsg === 'string' ? overrideMsg : input;
     if (!userMessage.trim() || isLoading) return;
     
@@ -161,6 +162,18 @@ export const AiComposerPanel: React.FC<AiComposerPanelProps> = ({
 
       if (fileCount > 0 && appendTerminalOutput) {
         appendTerminalOutput(`[AI SUCCESS] Berhasil menerapkan ${fileCount} file ke Editor.`);
+        
+        // --- AUTONOMOUS STRUCTURE AUDIT ---
+        const missingFiles = auditProjectStructure(parseComposerResponse(fullResponse), projectTree);
+        if (missingFiles.length > 0) {
+           appendTerminalOutput(`[AURA MAGIC] Mendeteksi struktur belum lengkap. Melengkapi: ${missingFiles.join(', ')}...`);
+           const autoPrompt = `Proyek ini sepertinya belum lengkap. Tolong buatkan file penting berikut agar project bisa langsung beroperasi: ${missingFiles.join(', ')}. Pastikan file tersebut memiliki konten standar yang valid.`;
+           // Trigger recursive send with auto-correction prompt
+           setTimeout(() => handleSend(autoPrompt, true), 1000);
+        } else {
+           appendTerminalOutput(`[AURA MAGIC] AI selesai memodifikasi ${fileCount} file. Proyek terlihat solid.`);
+        }
+
         if (onSuccess) onSuccess({ fileCount, commands: Array.from(appliedCommands) });
       }
 
