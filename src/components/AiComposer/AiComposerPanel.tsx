@@ -271,23 +271,18 @@ export const AiComposerPanel: React.FC<AiComposerPanelProps> = ({
 
                         return (
                           <div className={cn(
-                            "my-3 p-3 rounded-xl border text-xs flex flex-wrap items-center justify-between gap-3 shadow-md transition-all",
+                            "my-1 p-2 rounded-lg border text-[10px] flex items-center justify-between gap-2 shadow-sm",
                             isWriting 
-                              ? "bg-blue-500/10 border-blue-500/30 text-blue-400 animate-pulse" 
-                              : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                              ? "bg-blue-500/5 border-blue-500/20 text-blue-400" 
+                              : "bg-emerald-500/5 border-emerald-500/20 text-emerald-400 opacity-80"
                           )}>
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                               <FileCode size={14} className={isWriting ? "text-blue-400" : "text-emerald-400"} />
-                               <span className="font-mono font-bold truncate">/ {fileName}</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                               <FileCode size={12} className={isWriting ? "animate-pulse" : ""} />
+                               <span className="font-mono truncate">{fileName}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                               <span className={cn(
-                                 "px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest",
-                                 isWriting ? "bg-blue-500/20 text-blue-300" : "bg-emerald-500/20 text-emerald-300"
-                               )}>
-                                 {isWriting ? "Writing to Staging..." : "Staged"}
-                               </span>
-                            </div>
+                            <span className="text-[8px] font-bold uppercase tracking-tighter opacity-70">
+                               {isWriting ? "Writing..." : "Applied"}
+                            </span>
                           </div>
                         );
                       }

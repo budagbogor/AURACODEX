@@ -1236,20 +1236,39 @@ Integrations:
     let finalCommand = val;
     if ((getIsTauri() || !!TauriCommand) && isWindows && (val.startsWith('npm') || val.startsWith('npx'))) {
        try {
-         const binaryName = val.split(' ')[0];
-         // Use full path to binary for better reliability on Windows
-         const checkCmd = TauriCommand.create('cmd', ['/C', 'where', binaryName]);
-         const out = await checkCmd.execute();
-         if (out.code === 0 && out.stdout) {
-             const lines = out.stdout.split(/\r?\n/).filter(l => l.trim());
-             // PREFER .cmd or .exe on Windows to avoid sh scripts
-             const preferred = lines.find(l => l.toLowerCase().endsWith('.cmd') || l.toLowerCase().endsWith('.exe')) || lines[0];
-             const fullPath = preferred.trim();
-             // Important: Don't over-quote here, final wrapping happens in cmd /C
-             finalCommand = `"${fullPath}" ${val.split(' ').slice(1).join(' ')}`;
-             appendOutput(`[AURA INFO] Resolved ${binaryName} to: ${fullPath}`);
+          let fullPath = "";
+          const binaryName = val.split(' ')[0];
+          // Use full path to binary for better reliability on Windows
+          const checkCmd = TauriCommand.create('cmd', ['/C', 'where', binaryName]);
+          const out = await checkCmd.execute();
+          if (out.code === 0 && out.stdout) {
+              const lines = out.stdout.split(/\r?\n/).filter(l => l.trim());
+              // PREFER .cmd or .exe on Windows to avoid sh scripts
+              const preferred = lines.find(l => l.toLowerCase().endsWith('.cmd') || l.toLowerCase().endsWith('.exe')) || lines[0];
+              fullPath = preferred.trim();
+          } else {
+              // FALLBACK: Check standard paths if 'where' fails
+              const commonPaths = [
+                  `C:\\Program Files\\nodejs\\${binaryName}.cmd`,
+                  `C:\\Program Files\\nodejs\\${binaryName}.exe`,
+                  `C:\\Users\\${window.process?.env?.USERNAME || 'User'}\\AppData\\Roaming\\npm\\${binaryName}.cmd`
+              ];
+              for (const p of commonPaths) {
+                  try {
+                      const exists = await TauriCommand.create('cmd', ['/C', 'if exist', p, 'echo YES']).execute();
+                      if (exists.stdout.includes('YES')) { fullPath = p; break; }
+                  } catch(e) {}
+              }
           }
-       } catch (e) {}
+
+          if (fullPath) {
+              // Important: Don't over-quote here, final wrapping happens in cmd /C
+              finalCommand = `"${fullPath}" ${val.split(' ').slice(1).join(' ')}`;
+              appendOutput(`[AURA INFO] Resolved ${binaryName} to: ${fullPath}`);
+          }
+       } catch (e) {
+          console.warn('Path resolution failed:', e);
+       }
     }
 
     if ((getIsTauri() || !!TauriCommand) && TauriCommand) {

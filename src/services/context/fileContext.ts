@@ -20,7 +20,7 @@ export function buildProjectContextPrompt(files: FileItem[], activeFileId?: stri
   }
 
   // 2. Perankingan File (Jika terlalu banyak file terbuka, prioritaskan yang aktif & terkait)
-  const MAX_FILES_IN_CONTEXT = 15;
+  const MAX_FILES_IN_CONTEXT = 30;
   let sortedFiles = [...files];
   
   if (files.length > MAX_FILES_IN_CONTEXT) {
