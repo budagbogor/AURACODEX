@@ -479,28 +479,23 @@ export default function App() {
         await new Promise(resolve => setTimeout(resolve, 500));
         
         try {
-          // Gunakan variabel string agar Vite tidak melakukan static analysis berlebihan di browser
-          const pkgShell = '@tauri-apps/plugin-shell';
-          const pkgDialog = '@tauri-apps/plugin-dialog';
-          const pkgFs = '@tauri-apps/plugin-fs';
-
           try {
-            const { Command } = await import(/* @vite-ignore */ pkgShell);
+            const { Command } = await import('@tauri-apps/plugin-shell');
             if (Command) setTauriCommand(Command);
           } catch (e) { console.warn('Skip Shell:', e); }
 
           try {
-            const dialog = await import(/* @vite-ignore */ pkgDialog);
+            const dialog = await import('@tauri-apps/plugin-dialog');
             if (dialog) setTauriDialog(dialog);
           } catch (e) { console.warn('Skip Dialog:', e); }
 
           try {
-            const fs = await import(/* @vite-ignore */ pkgFs);
+            const fs = await import('@tauri-apps/plugin-fs');
             if (fs) setTauriFs(fs);
           } catch (e) { console.warn('Skip FS:', e); }
 
           appendTerminalOutput('[SYSTEM] Tauri Desktop Engine Initialized.');
-          console.log('[DEBUG] Tauri 2.6.6-PRO Initialized via Obfuscated Imports.');
+          console.log('[DEBUG] Tauri 2.6.6-PRO Initialized via Static Bundled Imports.');
         } catch (err: any) {
           console.error('General Tauri Load Error:', err);
         }
