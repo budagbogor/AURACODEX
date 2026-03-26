@@ -1494,7 +1494,7 @@ Integrations:
             </div>
             <div className="h-[1px] bg-white/5 my-1 mx-2"></div>
             <div className="px-3 py-1.5 flex items-center gap-2 text-white/40 cursor-default">
-              <Info size={14} /> <span className="text-[10px]">AURA AI IDE v2.6.6-PRO</span>
+              <Info size={14} /> <span className="text-[10px]">AURA AI IDE v3.1.1-PRO</span>
             </div>
           </div>
         </div>
