@@ -1,7 +1,7 @@
 {
   "name": "aura-ide",
   "private": true,
-  "version": "11.0.8",
+  "version": "11.0.9",
   "description": "Aura AI IDE - Professional Hybrid Development Environment",
   "author": "B.O.A. Indonesia",
   "main": "src-electron/main.cjs",

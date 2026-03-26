@@ -481,17 +481,17 @@ export default function App() {
         try {
           try {
             const { Command } = await import('@tauri-apps/plugin-shell');
-            if (Command) setTauriCommand(Command);
+            if (Command) setTauriCommand(() => Command);
           } catch (e) { console.warn('Skip Shell:', e); }
 
           try {
             const dialog = await import('@tauri-apps/plugin-dialog');
-            if (dialog) setTauriDialog(dialog);
+            if (dialog) setTauriDialog(() => dialog);
           } catch (e) { console.warn('Skip Dialog:', e); }
 
           try {
             const fs = await import('@tauri-apps/plugin-fs');
-            if (fs) setTauriFs(fs);
+            if (fs) setTauriFs(() => fs);
           } catch (e) { console.warn('Skip FS:', e); }
 
           appendTerminalOutput('[SYSTEM] Tauri Desktop Engine Initialized.');
