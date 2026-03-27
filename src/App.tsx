@@ -1318,8 +1318,6 @@ Integrations:
           
           // Map program ke nama binary yang benar di Windows + terdaftar di Tauri capabilities
           const directBinaries: Record<string, string> = {
-            'npm': 'npm.cmd',
-            'npx': 'npx.cmd', 
             'node': 'node',
             'git': 'git',
           };
@@ -1329,6 +1327,10 @@ Integrations:
             const binaryName = directBinaries[program];
             appendOutput(`[AURA] Direct invoke: ${binaryName} ${args.join(' ')}`);
             cmdInstance = TauriCommand.create(binaryName, args, { cwd: normalizedCwd });
+          } else if (program === 'npm' || program === 'npx') {
+            // Gunakan PowerShell untuk NPM/NPX agar pipe I/O dan eksekusi background (seperti Vite) berjalan stabil
+            appendOutput(`[AURA] PowerShell Invoke: ${val}`);
+            cmdInstance = TauriCommand.create('powershell', ['-NoProfile', '-Command', val], { cwd: normalizedCwd });
           } else {
             // Fallback: PowerShell untuk command umum (lebih reliable dari cmd.exe)
             appendOutput(`[AURA] PowerShell: ${val}`);
