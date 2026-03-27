@@ -1271,12 +1271,16 @@ Integrations:
         if (val.trim() === 'aura diagnostic') {
           appendOutput(`[DIAGNOSTIC] OS: ${isWindows ? 'Windows' : 'Unix'}`);
           appendOutput(`[DIAGNOSTIC] CWD: ${normalizedCwd}`);
+          appendOutput(`[DIAGNOSTIC] nativeProjectPath: ${nativeProjectPath || 'null'}`);
+          appendOutput(`[DIAGNOSTIC] terminalCwdRef: ${terminalCwdRef.current || 'null'}`);
           try {
-             const nodeCheck = await TauriCommand.create('cmd', ['/C', 'node', '-v']).execute();
-             appendOutput(`[DIAGNOSTIC] Node: ${nodeCheck.stdout.trim()}`);
-             const npmCheck = await TauriCommand.create('cmd', ['/C', 'npm', '-v']).execute();
-             appendOutput(`[DIAGNOSTIC] NPM: ${npmCheck.stdout.trim()}`);
-          } catch(e) {}
+             const nodeCheck = await TauriCommand.create('node', ['-v']).execute();
+             appendOutput(`[DIAGNOSTIC] Node: ${nodeCheck.stdout.trim() || 'error code ' + nodeCheck.code}`);
+             const npmCheck = await TauriCommand.create('npm.cmd', ['-v']).execute();
+             appendOutput(`[DIAGNOSTIC] NPM: ${npmCheck.stdout.trim() || 'error code ' + npmCheck.code}`);
+          } catch(e: any) {
+             appendOutput(`[DIAGNOSTIC ERROR] ${e?.message}`);
+          }
           return;
         }
         if (val.trim() === 'pwd') { appendOutput(normalizedCwd); return; }
@@ -1299,16 +1303,37 @@ Integrations:
           return;
         }
 
-        appendOutput(`[SYSTEM] Menjalankan melalui ${shellExe} (Native CLI): ${val}`);
+        appendOutput(`[SYSTEM] Menjalankan (Native CLI): ${val}`);
         setTerminalSessions(prev => prev.map(s => s.id === sessionId ? { ...s, isRunning: true, currentCommand: trimmedVal } : s));
 
         let cmdInstance;
         if (isWindows) {
-          // FINAL FIX: Cukup gunakan cmd /C diikuti command string sebagai SATU argumen.
-          // Tauri/Rust otomatis menambahkan quoting pada argumen jika mengandung spasi.
-          // cmd.exe akan menerima: cmd /C "npm install" → strip quotes → jalankan npm install via PATH.
-          // JANGAN tambahkan /S atau tanda kutip manual — ini menyebabkan double-escaping.
-          cmdInstance = TauriCommand.create('cmd', ['/C', val], { cwd: normalizedCwd });
+          // === WINDOWS TERMINAL ENGINE v11.0.22 ===
+          // Strategi: Panggil binary LANGSUNG via Tauri capabilities (bypass cmd.exe).
+          // Tauri shell plugin mendukung pemanggilan langsung npm.cmd, npx.cmd, dll.
+          // Untuk command lain, gunakan PowerShell sebagai fallback.
+          const parts = trimmedVal.split(/\s+/);
+          const program = parts[0].toLowerCase();
+          const args = parts.slice(1);
+          
+          // Map program ke nama binary yang benar di Windows + terdaftar di Tauri capabilities
+          const directBinaries: Record<string, string> = {
+            'npm': 'npm.cmd',
+            'npx': 'npx.cmd', 
+            'node': 'node',
+            'git': 'git',
+          };
+          
+          if (directBinaries[program]) {
+            // Panggil binary langsung — TANPA cmd.exe wrapper
+            const binaryName = directBinaries[program];
+            appendOutput(`[AURA] Direct invoke: ${binaryName} ${args.join(' ')}`);
+            cmdInstance = TauriCommand.create(binaryName, args, { cwd: normalizedCwd });
+          } else {
+            // Fallback: PowerShell untuk command umum (lebih reliable dari cmd.exe)
+            appendOutput(`[AURA] PowerShell: ${val}`);
+            cmdInstance = TauriCommand.create('powershell', ['-NoProfile', '-Command', val], { cwd: normalizedCwd });
+          }
         } else {
           cmdInstance = TauriCommand.create('sh', ['-c', val], { cwd: normalizedCwd });
         }

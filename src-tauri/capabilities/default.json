@@ -34,6 +34,8 @@
       "allow": [
         { "name": "npm", "cmd": "npm", "args": true },
         { "name": "npm.cmd", "cmd": "npm.cmd", "args": true },
+        { "name": "npx", "cmd": "npx", "args": true },
+        { "name": "npx.cmd", "cmd": "npx.cmd", "args": true },
         { "name": "git", "cmd": "git", "args": true },
         { "name": "node", "cmd": "node", "args": true },
         { "name": "cmd", "cmd": "cmd", "args": true },
@@ -47,6 +49,8 @@
       "allow": [
         { "name": "npm", "cmd": "npm", "args": true },
         { "name": "npm.cmd", "cmd": "npm.cmd", "args": true },
+        { "name": "npx", "cmd": "npx", "args": true },
+        { "name": "npx.cmd", "cmd": "npx.cmd", "args": true },
         { "name": "git", "cmd": "git", "args": true },
         { "name": "node", "cmd": "node", "args": true },
         { "name": "cmd", "cmd": "cmd", "args": true },
