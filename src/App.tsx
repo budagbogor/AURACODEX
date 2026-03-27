@@ -704,6 +704,7 @@ Integrations:
       }
 
       let prompt = `System Instruction: ${systemInstruction}
+            [CRITICAL BUILD RULE]: When scaffolding or creating new React/Vite/TS projects, NEVER output "references" in tsconfig.json that point to missing files like 'tsconfig.node.json' or 'tsconfig.app.json'. ALWAYS output a completely standalone monolithic tsconfig.json unless you EXPLICITLY create the referenced files too!
             ${skillInstruction ? `\nSkill Focus: ${skillInstruction}` : ''}
             ${aiRules ? `\nUser Rules: ${aiRules}` : ''}
             ${activeCommandInstruction}
@@ -1404,9 +1405,16 @@ Integrations:
   const handleTerminalKill = async () => {
     if (activeProcessRef.current) {
       try {
-        await activeProcessRef.current.kill();
-        appendTerminalOutput('[SYSTEM] Process terminated.');
+        const isWin = window.navigator.platform.toLowerCase().includes('win');
+        const pid = activeProcessRef.current.pid;
+        if (isWin && TauriCommand && pid) {
+          await TauriCommand.create('cmd', ['/c', 'taskkill', '/PID', pid.toString(), '/T', '/F']).execute().catch(() => {});
+        } else {
+          await activeProcessRef.current.kill();
+        }
+        appendTerminalOutput('[SYSTEM] Process tree terminated (KILLED).');
         activeProcessRef.current = null;
+        setTerminalSessions(prev => prev.map(s => s.id === activeTerminalId ? { ...s, isRunning: false } : s));
       } catch (e) {}
     }
   };
