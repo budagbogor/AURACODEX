@@ -1353,12 +1353,11 @@ Integrations:
 
         let cmdInstance;
         if (isWindows) {
-          // Solusi Final: Membongkar arguments secara utuh agar Rust/Tauri tidak mengacak-acak quotes untuk cmd /c
+          // Solusi Final: Biarkan penggunaannya seperti semula, jangan tambahkan tanda kutip. TauriPlugin akan handle ini.
           let binary = val.split(' ')[0];
           let args = val.split(' ').slice(1);
           if (finalCommand && fullPath) {
-             // Quote binary path if it contains spaces to ensure cmd /C works correctly
-             binary = fullPath.includes(' ') ? `"${fullPath}"` : fullPath;
+             binary = fullPath;
           }
           const parsedArgs = args.map(a => a === '&&' || a === '&' ? a : a);
           cmdInstance = TauriCommand.create('cmd', ['/D', '/C', binary, ...parsedArgs], { cwd: normalizedCwd });
@@ -1390,10 +1389,16 @@ Integrations:
             appendOutput(`Process exited with code ${data.code}`);
             const errLog = stderrBuffer.trim() ? stderrBuffer : stdoutBuffer;
             if (errLog) {
-               const shortLog = errLog.length > 2500 ? errLog.substring(errLog.length - 2500) : errLog;
-               appendOutput(`[AUTO-FIX] Mendelegasikan perbaikan ke AI...`);
-               setAutoFixMsg(`Terminal command \`${val}\` gagal (${data.code}).\n\nLog:\n\`\`\`\n${shortLog}\n\`\`\``);
-               setAutoFixTrigger(c => c + 1);
+               // PENCEGAHAN INFINITE LOOP: Jangan jalankan auto-fix jika ini adalah command npm/npx/git 
+               // karena error CLI biasanya disebabkan config salah, bukan sintaks kode.
+               if (trimmedVal.startsWith('npm') || trimmedVal.startsWith('npx') || trimmedVal.startsWith('git') || trimmedVal.startsWith('node')) {
+                   appendOutput(`[SYSTEM] Auto-fix dilewati untuk perintah CLI guna menghindari eksekusi berulang (loop).`);
+               } else {
+                   const shortLog = errLog.length > 2500 ? errLog.substring(errLog.length - 2500) : errLog;
+                   appendOutput(`[AUTO-FIX] Mendelegasikan perbaikan ke AI...`);
+                   setAutoFixMsg(`Terminal command \`${val}\` gagal (${data.code}).\n\nLog:\n\`\`\`\n${shortLog}\n\`\`\``);
+                   setAutoFixTrigger(c => c + 1);
+               }
             }
           } else {
              if (trimmedVal.includes('npm install')) {
