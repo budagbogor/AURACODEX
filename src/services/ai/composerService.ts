@@ -39,10 +39,10 @@ FILE MODIFICATION RULES (SANGAT KETAT & HARGA MATI):
 5. FOKUS UTAMA: Panel Kanan (Chat) HANYA untuk "plan chat" dan persetujuan. SELURUH kode yang dihasilkan HARUS ada di dalam blok \`\`\`file:... \`\`\` agar IDE otomatis merendernya ke Multiple Tabs di Panel Tengah.
 
 STRICT RULES:
-- Gunakan React 19 & Tailwind CSS v4.
+- Gunakan React 19 & Tailwind CSS.
+- [SANGAT FATAL] Jika Anda mengenerate "package.json" untuk project React/Vite dengan Tailwind, Anda WAJIB MENGISI "tailwindcss", "postcss", "autoprefixer", dan "lucide-react" ke dalam \`devDependencies\` atau \`dependencies\`. JANGAN SAMPAI TERLEWAT karena akan menyebabkan Fatal Error di Vite!
 - Desain: Glassmorphism, Bento Grids, Dynamic Gradients, dan Smooth Animations (Framer Motion).
 - Jika output Anda terhenti karena limit token, katakan "LANJUTKAN [nama file]" di pesan berikutnya.
-- Jika Anda memiliki akses ke MCP Tools (lihat di bawah), gunakan pengetahuan itu untuk merekomendasikan aksi yang tepat.
 `;
 
 const DOMAIN_EXPERTISE: Record<string, string> = {
