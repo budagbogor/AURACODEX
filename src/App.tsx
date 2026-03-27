@@ -1266,10 +1266,6 @@ Integrations:
        }
     }
 
-    let finalCommand = val;
-    // Resolusi path binary dihapus — cmd /S /C akan menggunakan PATH sistem secara native.
-    // Ini lebih robust karena cmd.exe sendiri yang menemukan npm/npx/node.
-
     if ((getIsTauri() || !!TauriCommand) && TauriCommand) {
       try {
         const cwdReference = terminalCwdRef.current || nativeProjectPath;
@@ -1324,11 +1320,11 @@ Integrations:
 
         let cmdInstance;
         if (isWindows) {
-          // SOLUSI ROBUST: Gunakan cmd /S /C "command" untuk menjalankan perintah sebagai satu string utuh.
-          // /S = jangan strip tanda kutip luar. /C = jalankan lalu exit setelah selesai.
-          // Ini membiarkan cmd.exe menemukan npm/npx/node sendiri via PATH sistem.
-          // Proses long-running (seperti Vite dev server) akan tetap hidup sampai ditutup manual.
-          cmdInstance = TauriCommand.create('cmd', ['/S', '/C', `"${val}"`], { cwd: normalizedCwd });
+          // FINAL FIX: Cukup gunakan cmd /C diikuti command string sebagai SATU argumen.
+          // Tauri/Rust otomatis menambahkan quoting pada argumen jika mengandung spasi.
+          // cmd.exe akan menerima: cmd /C "npm install" → strip quotes → jalankan npm install via PATH.
+          // JANGAN tambahkan /S atau tanda kutip manual — ini menyebabkan double-escaping.
+          cmdInstance = TauriCommand.create('cmd', ['/C', val], { cwd: normalizedCwd });
         } else {
           cmdInstance = TauriCommand.create('sh', ['-c', val], { cwd: normalizedCwd });
         }
