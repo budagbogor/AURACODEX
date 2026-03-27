@@ -236,6 +236,12 @@ export default function App() {
   const [showPreviewPanel, setShowPreviewPanel] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('http://localhost:3000');
 
+  // Synchronous CWD tracking for terminal to avoid React state batching delays
+  const terminalCwdRef = useRef<string | null>(nativeProjectPath);
+  useEffect(() => {
+    terminalCwdRef.current = nativeProjectPath;
+  }, [nativeProjectPath]);
+
   const [mcpServers, setMcpServers] = useState<any[]>(() => {
     const saved = localStorage.getItem('aura_mcp_servers');
     if (saved) {
@@ -1246,9 +1252,9 @@ Integrations:
     }
 
     let finalCommand = val;
+    let fullPath = "";
     if ((getIsTauri() || !!TauriCommand) && isWindows && (val.startsWith('npm') || val.startsWith('npx'))) {
        try {
-          let fullPath = "";
           const binaryName = val.split(' ')[0];
           // Use full path to binary for better reliability on Windows
           const checkCmd = TauriCommand.create('cmd', ['/C', 'where', binaryName]);
@@ -1274,8 +1280,8 @@ Integrations:
           }
 
           if (fullPath) {
-              // Important: Do not enclose in outer quotes for cmd /S /C
-              finalCommand = `"${fullPath}" ${val.split(' ').slice(1).join(' ')}`;
+              // Don't build a single quoted string, finalCommand acts as a flag
+              finalCommand = val;
               appendOutput(`[AURA INFO] Resolved ${binaryName} to: ${fullPath}`);
           }
        } catch (e) {
@@ -1285,7 +1291,8 @@ Integrations:
 
     if ((getIsTauri() || !!TauriCommand) && TauriCommand) {
       try {
-        const normalizedCwd = (nativeProjectPath || '.').replace(/\//g, '\\');
+        const cwdReference = terminalCwdRef.current || nativeProjectPath;
+        const normalizedCwd = (cwdReference || '.').replace(/\//g, '\\');
         const shellExe = isWindows ? 'cmd' : 'sh';
 
         if (activeProcessRef.current) {
@@ -1324,20 +1331,29 @@ Integrations:
           } else {
             newPath = `${normalizedCwd}\\${target}`.replace(/\//g, '\\');
           }
-          setNativeProjectPath(newPath.replace(/\\\\/g, '\\'));
+          newPath = newPath.replace(/\\\\/g, '\\');
+          terminalCwdRef.current = newPath;
+          setNativeProjectPath(newPath);
           appendOutput(`✓ Pindah ke: ${newPath}`);
           return;
         }
 
-        appendOutput(`[SYSTEM] Menjalankan melalui ${shellExe}: ${finalCommand}`);
+        appendOutput(`[SYSTEM] Menjalankan melalui ${shellExe} (Native CLI): ${val}`);
         setTerminalSessions(prev => prev.map(s => s.id === sessionId ? { ...s, isRunning: true, currentCommand: trimmedVal } : s));
 
         let cmdInstance;
         if (isWindows) {
-          // Changed /S /C wrapping to let Tauri argument serialization handle escaping naturally
-          cmdInstance = TauriCommand.create('cmd', ['/C', finalCommand], { cwd: normalizedCwd });
+          // Solusi Final: Membongkar arguments secara utuh agar Rust/Tauri tidak mengacak-acak quotes untuk cmd /c
+          let binary = val.split(' ')[0];
+          let args = val.split(' ').slice(1);
+          if (finalCommand && fullPath) {
+             binary = fullPath;
+          }
+          // Parsing && untuk Windows agar cmd menanggapinya sebagai operator shell asli
+          const parsedArgs = args.map(a => a === '&&' || a === '&' ? a : a);
+          cmdInstance = TauriCommand.create('cmd', ['/D', '/C', binary, ...parsedArgs], { cwd: normalizedCwd });
         } else {
-          cmdInstance = TauriCommand.create('sh', ['-c', finalCommand], { cwd: normalizedCwd });
+          cmdInstance = TauriCommand.create('sh', ['-c', val], { cwd: normalizedCwd });
         }
 
         let stdoutBuffer = '';
