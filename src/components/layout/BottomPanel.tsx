@@ -90,7 +90,11 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                        : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
                    )}
                 >
-                  <Terminal size={12} className={activeTerminalId === s.id ? "text-blue-400" : "text-gray-600"} />
+                  {s.isRunning && s.currentCommand?.includes('npm i') ? (
+                    <RefreshCw size={12} className={cn("animate-spin", activeTerminalId === s.id ? "text-emerald-400" : "text-emerald-600")} />
+                  ) : (
+                    <Terminal size={12} className={activeTerminalId === s.id ? "text-blue-400" : "text-gray-600"} />
+                  )}
                   <span>{s.name}</span>
                   {terminalSessions.length > 1 && (
                     <X 

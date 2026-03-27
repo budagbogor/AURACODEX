@@ -1376,12 +1376,17 @@ Integrations:
                }
             }
           } else {
-             if (trimmedVal.includes('npm install')) {
+             if (trimmedVal.includes('npm install') || trimmedVal.includes('npm i')) {
                 setTimeout(async () => {
                    const check = await TauriCommand.create('cmd', ['/C', 'if exist node_modules (echo YES)'], { cwd: normalizedCwd }).execute();
                    if (!check.stdout.includes('YES')) {
                       appendOutput(`[SYSTEM] ⚠️ WARNING: node_modules TIDAK ditemukan.`);
                       executeCommand('npm install --no-bin-links --legacy-peer-deps');
+                   } else {
+                      if (nativeProjectPath) {
+                         appendOutput(`[SYSTEM] 📦 node_modules telah siap. Me-refresh panel folder...`);
+                         await syncFilesFromNativePath(nativeProjectPath);
+                      }
                    }
                 }, 1000);
              }

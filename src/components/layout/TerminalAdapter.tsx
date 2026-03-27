@@ -65,6 +65,41 @@ export const TerminalAdapter: React.FC<TerminalAdapterProps> = ({
     xtermRef.current = term;
     fitAddonRef.current = fitAddon;
 
+    // Tambahkan Link Provider untuk mendeteksi URL localhost di terminal
+    term.registerLinkProvider({
+      provideLinks(bufferLineNumber, callback) {
+        const line = term.buffer.active.getLine(bufferLineNumber - 1);
+        if (!line) { callback(undefined); return; }
+        
+        const text = line.translateToString(true);
+        const urlRegex = /https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::\]):\d+/ig;
+        const links: any[] = [];
+        let match;
+        
+        while ((match = urlRegex.exec(text)) !== null) {
+          links.push({
+            range: {
+              start: { x: match.index + 1, y: bufferLineNumber },
+              end: { x: match.index + match[0].length, y: bufferLineNumber }
+            },
+            text: match[0],
+            activate: (e: any, urlText: string) => {
+              const detectedUrl = urlText.replace(/0\.0\.0\.0|\[::\]/, 'localhost');
+              // Jika di Tauri, buka dengan kapabilitas OS secara native (browser default PC)
+              if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+                import('@tauri-apps/plugin-shell').then(({ Command }) => {
+                  Command.create('cmd', ['/C', 'start', detectedUrl]).execute().catch(() => {});
+                }).catch(() => window.open(detectedUrl, '_blank'));
+              } else {
+                window.open(detectedUrl, '_blank');
+              }
+            }
+          });
+        }
+        callback(links);
+      }
+    });
+
     // Handle incoming terminal data directly via EventBus
     const handleWrite = (e: Event) => {
       const customEvent = e as CustomEvent;
