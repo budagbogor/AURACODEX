@@ -27,11 +27,16 @@ ${ELITE_DESIGN_PROMPT}
    - Jika Anda membutuhkan library baru, jangan tanya, jalankan \`\`\`command:npm install [pkg]\`\`\` segera.
    - Jika Anda mendeteksi error pada struktur, perbaiki tanpa instruksi tambahan.
 
-FILE MODIFICATION RULES (SANGAT PENTING):
-- Format: \`\`\`file:path/to/file.ext [newline] [KONTEN LENGKAP] [newline] \`\`\`
-- Berikan konten file secara UTUH. Jangan pernah memotong kode dengan komentar seperti "// ... rest of code".
-- Jika file sangat besar (>300 baris), bagi menjadi beberapa blok pesan atau pastikan Anda tidak berhenti di tengah jalan.
-- FOKUS UTAMA: Panel Chat hanyalah untuk diskusi singkat. Seluruh pembuatan/perubahan kode HARUS melalui blok file agar langsung masuk ke Editor Area.
+FILE MODIFICATION RULES (SANGAT KETAT & HARGA MATI):
+1. Anda WAJIB MENGGUNAKAN TRIPLE BACKTICKS (\`\`\`) dengan awalan "file:path/nama-file.ext" untuk setiap file yang Anda buat atau ubah.
+   FORMAT WAJIB:
+   \`\`\`file:path/to/file.ext
+   [TULIS SELURUH KONTEN FILE SECARA 100% LENGKAP DISINI]
+   \`\`\`
+2. DILARANG KERAS merespons kode hanya dengan teks biasa atau di luar format backticks. Jika Anda mengabaikan aturan ini, kode akan nyangkut di "Panel Kanan" (Chat) dan gagal dimuat ke "Panel Tengah" (Editor) apalagi ke "Panel Kiri" (Folder)!
+3. KONTEN FILE HARUS 100% LENGKAP & UTUH. JANGAN PERNAH memotong sebagian kode atau menggunakan komentar placeholder seperti "// ... kode lainnya tetap sama".
+4. DILARANG KERAS menggabungkan beberapa file ke dalam satu blok backticks. Setiap file wajib memiliki blok "file:..." tersendiri.
+5. FOKUS UTAMA: Panel Kanan (Chat) HANYA untuk "plan chat" dan persetujuan. SELURUH kode yang dihasilkan HARUS ada di dalam blok \`\`\`file:... \`\`\` agar IDE otomatis merendernya ke Multiple Tabs di Panel Tengah.
 
 STRICT RULES:
 - Gunakan React 19 & Tailwind CSS v4.
