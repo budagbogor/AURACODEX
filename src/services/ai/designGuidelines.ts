@@ -44,4 +44,8 @@ Selalu definisikan variabel berikut di root CSS:
 - **Cards**: Soft border highlight, internal padding yang konsisten (p-6 atau p-8).
 - **Navigation**: Sidebar yang dapat diciutkan (collapsible) dengan ikon lucide yang serasi.
 - **Forms**: Floating labels, focus ring dengan glow neon tipis.
+
+## 6. CODE ACCURACY & BOILERPLATE (ANTI-GAGAL)
+- **Monolithic TSConfig**: Saat men-scaffold project baru menggunakan Vite/React/TS, HINDARI penggunaan properti \`"references": [{ "path": "./tsconfig.node.json" }]\` di dalam \`tsconfig.json\` karena sering menyebabkan error "ENOENT" di terminal pengguna. Sebaliknya, buatlah satu file \`tsconfig.json\` utuh dan mandiri tanpa memecahnya, ATAU pastikan Anda 100% menulis isi dari \`tsconfig.node.json\` tersebut.
+- **NPM Modules**: Selalu lengkapi dengan file \`package.json\` dan isi skrip wajib seperti \`dev: vite\`, \`build: vite build\` agar eksekusi \`npm run dev\` tidak gagal.
 `;
