@@ -1034,7 +1034,7 @@ Integrations:
       if (stats.fileCount > 3 || stats.commands.some(c => c.includes('create') || c.includes('vite'))) {
         appendTerminalOutput('[AURA MAGIC] Menjalankan alur: npm install -> npm run dev');
         // We use wait logic or separate commands for better reliability on Windows
-        executeCommand('npm install');
+        executeCommand('npm install --legacy-peer-deps');
         setTimeout(() => {
            executeCommand('npm run dev');
         }, 1500);
@@ -1328,9 +1328,9 @@ Integrations:
             appendOutput(`[AURA] Direct invoke: ${binaryName} ${args.join(' ')}`);
             cmdInstance = TauriCommand.create(binaryName, args, { cwd: normalizedCwd });
           } else if (program === 'npm' || program === 'npx') {
-            // Gunakan PowerShell untuk NPM/NPX agar pipe I/O dan eksekusi background (seperti Vite) berjalan stabil
-            appendOutput(`[AURA] PowerShell Invoke: ${val}`);
-            cmdInstance = TauriCommand.create('powershell', ['-NoProfile', '-Command', val], { cwd: normalizedCwd });
+            // Gunakan CMD untuk NPM/NPX karena PowerShell mem-buffer stdout proses long-running (seperti Vite)
+            appendOutput(`[AURA] Native CMD Invoke: cmd /c ${val}`);
+            cmdInstance = TauriCommand.create('cmd', ['/c', val], { cwd: normalizedCwd });
           } else {
             // Fallback: PowerShell untuk command umum (lebih reliable dari cmd.exe)
             appendOutput(`[AURA] PowerShell: ${val}`);
@@ -1381,7 +1381,7 @@ Integrations:
                    const check = await TauriCommand.create('cmd', ['/C', 'if exist node_modules (echo YES)'], { cwd: normalizedCwd }).execute();
                    if (!check.stdout.includes('YES')) {
                       appendOutput(`[SYSTEM] ⚠️ WARNING: node_modules TIDAK ditemukan.`);
-                      executeCommand('npm install --no-bin-links');
+                      executeCommand('npm install --no-bin-links --legacy-peer-deps');
                    }
                 }, 1000);
              }
