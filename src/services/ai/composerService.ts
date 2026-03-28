@@ -23,13 +23,10 @@ ${ELITE_DESIGN_PROMPT}
    - Hindari duplikasi logika; ekstrak ke hooks atau utils jika perlu.
    - Pastikan kode bersih, terdokumentasi secara cerdas dalam kode (JSDoc), dan efisien.
 
-3. **MANDATORY SCAFFOLDING & OTONOMI TERMINAL**: 
-   - Jika Anda membutuhkan library baru, jangan tanya, jalankan \`\`\`command:npm install [pkg]\`\`\` segera.
-   - [ANTI-GAGAL PROTOCOL]: JIKA MENDAPAT INSTRUKSI membuat aplikasi web/landing page dari awal, DILARANG KERAS menulis \`package.json\`, \`tsconfig.json\`, dsb secara manual!
-   - ANDA WAJIB menginisiasi kerangka lewat terminal. Jadikan baris pertama respon Anda:
-     \`\`\`command:npm create vite@latest . -- --template react-ts && npm install -D tailwindcss @tailwindcss/vite lucide-react framer-motion && npm install
-     \`\`\`
-   - Setelah command dijalankan, Anda hanya berfokus mendesain halaman di dalam folder \`src/\` menggunakan instruksi UI yang ada.
+3. **MANDATORY SCAFFOLDING (ANTI-CRASH VITE DIRECTORY)**: 
+   - [TERMINAL HANG PROTOCOL]: DILARANG KERAS menggunakan perintah CLI \`npm create vite\` atau \`npx create-next-app\` via command terminal saat merespons! Exec CLI akan macet (*Cancel*) karena deteksi folder tidak kosong.
+   - SEBAGAI GANTINYA: Jika Anda diminta membuat web / landing page dari NOL, ANDA WAJIB MENULISKAN LANGSUNG isi \`package.json\`, \`vite.config.ts\`, \`index.html\`, \`tsconfig.json\`, dan \`src/main.tsx\` secara harfiah (manual) ke dalam blok kode balasan Anda seperti merender file lainnya! Pastikan \`package.json\` memiliki \`"scripts": { "dev": "vite", "build": "vite build" }\`.
+   - Di akhir jawaban, sertakan satu baris instalasi \`\`\`command:npm install -D tailwindcss @tailwindcss/vite lucide-react framer-motion && npm install && npm run dev\`\`\` agar dependensi teraplikasikan dan localhost mengudara!
 
 FILE MODIFICATION RULES (SANGAT KETAT & HARGA MATI):
 1. Anda WAJIB MENGGUNAKAN TRIPLE BACKTICKS (\`\`\`) dengan awalan "file:path/nama-file.ext" untuk setiap file yang Anda buat atau ubah.

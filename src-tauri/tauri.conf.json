@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "AURA AI IDE",
-  "version": "11.0.33",
+  "version": "11.0.34",
   "identifier": "com.aura.ide",
   "build": {
     "frontendDist": "../dist",
