@@ -22,7 +22,7 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
               <Bot size={28} className="text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">AURA AI IDE v11.0.35</h2>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">AURA AI IDE v11.0.36</h2>
               <p className="text-[#858585] text-sm mt-1">The Next Generation AI-Powered "Zero-Click" IDE</p>
             </div>
           </div>

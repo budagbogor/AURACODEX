@@ -6,13 +6,13 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   
   /* UI/UX Pro Max Spacing Rhythm (8dp) */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
-  --spacing-2xl: 48px;
-  --spacing-3xl: 64px;
+  --ui-spacing-xs: 4px;
+  --ui-spacing-sm: 8px;
+  --ui-spacing-md: 16px;
+  --ui-spacing-lg: 24px;
+  --ui-spacing-xl: 32px;
+  --ui-spacing-2xl: 48px;
+  --ui-spacing-3xl: 64px;
 
   /* UI/UX Pro Max Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
