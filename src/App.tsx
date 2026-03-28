@@ -679,10 +679,24 @@ export default function App() {
       // Context7 (Deep Context & MCP Docs)
       let deepContext = '';
       if (context7Mode) {
-        // Collect all open files with their contents
-        const allFilesContext = files.map(f => {
+        // RAG Filter: Hanya menyertakan maksimal 3 file paling relevan plus referensi nama
+        const query = userMsg.content.toLowerCase();
+        const scoredFiles = files.map(f => {
+           let score = 0;
+           if (f.id === activeFileId) score += 10;
+           if (query.includes(f.name.toLowerCase().split('.')[0])) score += 5;
+           return { file: f, score };
+        }).sort((a, b) => b.score - a.score);
+        
+        const relevant = scoredFiles.slice(0, 3).map(s => s.file);
+        const others = scoredFiles.slice(3).map(s => s.file);
+
+        const allFilesContext = relevant.map(f => {
           return `--- File: ${f.name} (${f.language}) ---\n${f.content || '(empty)'}\n`;
         }).join('\n');
+        
+        const treeContext = others.length > 0 ? 
+          `\nOther available files (request to view if needed):\n${others.map(f => `- ${f.name}`).join('\n')}` : '';
 
         const context7Active = mcpServers.find(s => s.name === 'context7' && s.connected);
 
@@ -693,8 +707,9 @@ export default function App() {
    IMPORTANT: You have access to the Context7 MCP Server for real-time documentation (>2000 libraries). 
    To prevent hallucinations or using outdated syntax, ALWAYS use the available MCP tools to fetch the latest documentation for any libraries, frameworks, or APIs being discussed (e.g., Next.js, React, Tailwind v4, etc.).
 
-Workspace Files:
+Workspace Files (Top Relevant):
 ${allFilesContext}
+${treeContext}
 
 Active File: ${activeFile?.name || 'None'}
 Integrations:
@@ -1350,8 +1365,10 @@ Integrations:
           const match = data.match(urlRegex);
           if (match && match[0]) {
              const detectedUrl = match[0].replace(/0\.0\.0\.0|\[::\]/, 'localhost');
-             appendTerminalOutput(`[AURA BROWSER] 🚀 Server Aktif: ${detectedUrl}`);
-             TauriCommand.create('cmd', ['/C', 'start', detectedUrl]).execute().catch(() => {});
+             appendTerminalOutput(`[AURA BROWSER] 🚀 Mengarahkan RAG Browser Bawaan ke: ${detectedUrl}`);
+             setPreviewUrl(detectedUrl);
+             setShowPreviewPanel(true);
+             setShowAiPanel(false);
           }
         };
 
@@ -1380,7 +1397,7 @@ Integrations:
                }
             }
           } else {
-             if (trimmedVal.includes('npm install') || trimmedVal.includes('npm i')) {
+             if ((trimmedVal.includes('npm install') || trimmedVal.includes('npm i')) && !trimmedVal.includes('--no-bin-links')) {
                 setTimeout(async () => {
                    const check = await TauriCommand.create('cmd', ['/C', 'if exist node_modules (echo YES)'], { cwd: normalizedCwd }).execute();
                    if (!check.stdout.includes('YES')) {

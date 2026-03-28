@@ -8,7 +8,7 @@ import { AuraLogo } from '@/components/layout/AuraLogo';
 import { FileItem } from '@/types';
 import { WorkflowDiagram } from '@/components/features/WorkflowDiagram';
 import { StagingArea } from '@/components/layout/StagingArea';
-
+import { fetchPredictiveCompletion } from '@/services/ai/predictiveAutocomplete';
 interface StagingFile {
   path: string;
   originalContent: string;
@@ -60,6 +60,43 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   onUpdateStagingStatus,
   onAiAction
 }) => {
+  let typingTimer: NodeJS.Timeout;
+  
+  const handleEditorDidMount = (editor: any, monaco: any) => {
+    // Registrasi Provider Inline Completion untuk Ghost Text
+    monaco.languages.registerInlineCompletionsProvider('*', {
+      provideInlineCompletions: async (model: any, position: any, context: any, token: any) => {
+         return new Promise((resolve) => {
+             clearTimeout(typingTimer);
+             typingTimer = setTimeout(async () => {
+                 const apiKey = localStorage.getItem('aura_openrouter_key') || localStorage.getItem('aura_gemini_key') || '';
+                 if (!apiKey) return resolve({ items: [] });
+                 
+                 const textBefore = model.getValueInRange({
+                     startLineNumber: Math.max(1, position.lineNumber - 5), startColumn: 1,
+                     endLineNumber: position.lineNumber, endColumn: position.column
+                 });
+                 const textAfter = model.getValueInRange({
+                     startLineNumber: position.lineNumber, startColumn: position.column,
+                     endLineNumber: Math.min(model.getLineCount(), position.lineNumber + 5), endColumn: 99
+                 });
+                 
+                 const suggestion = await fetchPredictiveCompletion(textBefore, textAfter, model.getLanguageId(), apiKey);
+                 if (!suggestion || suggestion.includes('---')) return resolve({ items: [] });
+                 
+                 resolve({
+                    items: [{
+                       insertText: suggestion,
+                       range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column)
+                    }]
+                 });
+             }, 800); // Tunda 800ms setelah mengetik
+         });
+      },
+      freeInlineCompletions: () => {}
+    });
+  };
+
   return (
     <div className="flex-1 flex min-h-0 relative">
       {/* Welcome Screen when no files are open */}
@@ -171,6 +208,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
               language={activeFile.language}
               value={activeFile.content}
               onChange={handleEditorChange}
+              onMount={handleEditorDidMount}
               options={{
                 fontSize: editorFontSize,
                 minimap: { enabled: true },
