@@ -26,7 +26,7 @@ fn start_watcher(app: AppHandle, state: State<'_, WatcherState>, path: String) -
         println!("[AURA FS] Event detected: {:?}", event);
         
         // Emit event to frontend
-        let _ = app_clone.emit("aura://fs-event", event);
+        let _ = app_clone.emit("aura://fs-event", "change");
       },
       Err(e) => println!("[AURA FS] Watch error: {:?}", e),
     }
