@@ -1410,25 +1410,76 @@ Integrations:
     if (trimmedVal === 'npm install' || trimmedVal === 'npm i') {
        const hasPackageJson = files.some(f => f.name === 'package.json');
        if (!hasPackageJson) {
-          appendOutput(`[SYSTEM] ⚠️ WARNING: 'package.json' tidak ditemukan.`);
+          appendOutput(`[SYSTEM] ⚠️ Proyek baru terdeteksi. Menyiapkan Boilerplate Tailwind v4...`);
+          
           const defaultPackageJson = {
             name: projectName.toLowerCase().replace(/\s+/g, '-'),
             version: "1.0.0",
             private: true,
+            type: "module",
             scripts: { "dev": "vite", "build": "vite build", "preview": "vite preview" },
-            dependencies: {
-              "react": "^19.0.0",
-              "react-dom": "^19.0.0"
-            },
-            devDependencies: {
-              "@vitejs/plugin-react": "^4.3.4",
-              "vite": "^6.0.0",
-              "tailwindcss": "^4.0.0",
-              "@tailwindcss/vite": "^4.0.0"
-            }
+            dependencies: { "react": "^19.0.0", "react-dom": "^19.0.0", "lucide-react": "^0.474.0", "framer-motion": "^12.0.0" },
+            devDependencies: { "@vitejs/plugin-react": "^4.3.4", "vite": "^6.0.0", "tailwindcss": "^4.0.0", "@tailwindcss/vite": "^4.0.0" }
           };
+
+          const defaultViteConfig = `import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+});`;
+
+          const defaultCss = `@import "tailwindcss";`;
+
+          const defaultHtml = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AURA Project</title>
+  </head>
+  <body class="bg-[#0a0a0a] text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>`;
+
+          const defaultMain = `import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);`;
+
+          const defaultApp = `import React from 'react';
+
+export default function App() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <h1 className="text-5xl font-black bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+        AURA V4 READY
+      </h1>
+      <p className="mt-4 text-white/60 tracking-widest uppercase text-xs">
+        Tailwind CSS v4 & React v19 Engine Active
+      </p>
+    </div>
+  );
+}`;
+
+          // Create all necessary files
           handleApplyCode('package.json', JSON.stringify(defaultPackageJson, null, 2), 'create_or_modify');
-          appendOutput(`[SYSTEM] ✅ 'package.json' dibuat otomatis.`);
+          handleApplyCode('vite.config.ts', defaultViteConfig, 'create_or_modify');
+          handleApplyCode('src/index.css', defaultCss, 'create_or_modify');
+          handleApplyCode('index.html', defaultHtml, 'create_or_modify');
+          handleApplyCode('src/main.tsx', defaultMain, 'create_or_modify');
+          handleApplyCode('src/App.tsx', defaultApp, 'create_or_modify');
+          
+          appendOutput(`[SYSTEM] ✅ Boilerplate Tailwind v4 dibuat otomatis. Menjalankan instalasi...`);
        }
     }
 
