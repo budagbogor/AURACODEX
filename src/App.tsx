@@ -838,8 +838,11 @@ export default function App() {
 [DEEP CONTEXT - CONTEXT7 MODE ACTIVE]
 1. Workspace Context: You are analyzing a full workspace. All opened files are provided below.
 2. Documentation Engine: ${context7Active ? 'CONNECTED' : 'STANDBY'}. 
-   IMPORTANT: You have access to the Context7 MCP Server for real-time documentation (>2000 libraries). 
-   To prevent hallucinations or using outdated syntax, ALWAYS use the available MCP tools to fetch the latest documentation for any libraries, frameworks, or APIs being discussed (e.g., Next.js, React, Tailwind v4, etc.).
+   IMPORTANT: Always use Context7 for library documentation:
+   - Before suggesting code for any external library, YOU MUST use the MCP tools "resolve-library-id" and "get-library-docs" to fetch official documentation.
+   - Never rely on training data for framework APIs (Next.js, React, Vue, Rails, Tailwind v4, etc.).
+   - Pull docs first, then write the code.
+   - Use version-specific documentation when available.
 
 Workspace Files (Top Relevant):
 ${allFilesContext}

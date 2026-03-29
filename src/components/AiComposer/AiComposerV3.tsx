@@ -127,7 +127,11 @@ export const AiComposerV3: React.FC<AiComposerV3Props> = ({
                      {msg.content}
                   </div>
                 ) : (
-                  <Markdown>{msg.content}</Markdown>
+                  <Markdown>
+                    {msg.content
+                      .replace(/```(file|delete):([^\n]+)\n([\s\S]*?)(?:```|$)/g, '\n> 📦 **$2** *(Kode telah diproses ke Editor Tengah)*\n')
+                      .replace(/```call:mcp\/([^\/]+)\/([^\n]+)\n([\s\S]*?)(?:```|$)/g, '\n> 🛠️ **Otonom Tool: $2** \n')}
+                  </Markdown>
                 )}
               </div>
             </motion.div>
