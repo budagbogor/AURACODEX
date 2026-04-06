@@ -1021,6 +1021,26 @@ const KNOWN_DEV_DEPENDENCIES: Record<string, string> = {
   '@capacitor/cli': '^8.2.0',
   '@capacitor/android': '^8.2.0'
 };
+const CAPACITOR_WEB_INCOMPATIBLE_DEPENDENCIES = new Set([
+  'tailwindcss-react-native',
+  'nativewind',
+  'react-native',
+  'react-native-web',
+  'expo',
+  '@expo/vector-icons',
+  'metro',
+  '@react-native/babel-preset',
+  '@react-navigation/native',
+  '@react-navigation/bottom-tabs',
+  '@react-navigation/native-stack'
+]);
+const MISPLACED_MOBILE_NATIVE_CONFIG_NAMES = new Set([
+  'app.json',
+  'babel.config.js',
+  'babel.config.cjs',
+  'metro.config.js',
+  'metro.config.cjs'
+]);
 const WEB_PRODUCTION_ROOT_FILES = new Set([
   'package.json',
   'index.html',
@@ -1199,12 +1219,75 @@ const sanitizeGeneratedCodeContent = (content: string) => {
   return sanitizedLines.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '');
 };
 
+const toPascalCase = (value: string) =>
+  value
+    .replace(/\.[^.]+$/g, '')
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join('') || 'GeneratedSection';
+
+const hasTopLevelComponentShape = (content: string) =>
+  /export\s+default|export\s+function|function\s+[A-Z]|const\s+[A-Z][A-Za-z0-9_]*\s*=\s*\(|const\s+[A-Z][A-Za-z0-9_]*\s*=\s*\{/m.test(content);
+
+const canWrapBareJsxSnippet = (content: string) => {
+  const firstMeaningfulLine = content
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.length > 0);
+
+  if (!firstMeaningfulLine) return false;
+  if (firstMeaningfulLine.startsWith('</')) return false;
+  if (/^(className|title|src|href|alt|onClick|id|role|style)\s*=/.test(firstMeaningfulLine)) return false;
+  return firstMeaningfulLine.startsWith('<') || firstMeaningfulLine.startsWith('{');
+};
+
+const buildRecoveredComponentFile = (relativePath: string, content: string) => {
+  const componentName = toPascalCase(getBaseName(relativePath));
+  const normalizedBody = content.trim().replace(/\t/g, '  ');
+
+  if (canWrapBareJsxSnippet(normalizedBody)) {
+    return [
+      `export function ${componentName}() {`,
+      '  return (',
+      '    <>',
+      ...normalizedBody.split('\n').map((line) => `      ${line}`.replace(/\s+$/g, '')),
+      '    </>',
+      '  );',
+      '}',
+      '',
+      `export default ${componentName};`
+    ].join('\n');
+  }
+
+  return [
+    `export function ${componentName}() {`,
+    '  return (',
+    '    <section className="rounded-2xl border border-dashed border-amber-500/40 bg-amber-500/10 p-6 text-sm text-amber-100">',
+    `      <p>Generated content for ${componentName} was incomplete and has been replaced with a safe fallback.</p>`,
+    '    </section>',
+    '  );',
+    '}',
+    '',
+    `export default ${componentName};`
+  ].join('\n');
+};
+
+const ensureValidGeneratedComponentShape = (relativePath: string, content: string) => {
+  const extension = getExtension(relativePath);
+  if (!['tsx', 'jsx'].includes(extension)) return content;
+  if (hasTopLevelComponentShape(content)) return content;
+  if (!/(<|<\/|\/>)/.test(content)) return content;
+  return buildRecoveredComponentFile(relativePath, content);
+};
+
 const isAcceptableGeneratedPath = (relativePath: string) => {
   const normalized = normalizeGeneratedRelativePath(relativePath);
   const baseName = getBaseName(normalized);
   const extension = getExtension(normalized);
 
   if (!normalized) return false;
+  if (MISPLACED_MOBILE_NATIVE_CONFIG_NAMES.has(baseName) && normalized.includes('/')) return false;
   if (ROOT_LEVEL_CONFIG_NAMES.has(baseName)) return true;
   if (baseName === 'package.json' || baseName === 'index.html') return true;
   if (/\/(?:package\.json|index\.html|vite\.config\.(?:ts|js|mjs|cjs))$/i.test(normalized)) return true;
@@ -1317,6 +1400,8 @@ const ensureTailwindEntrypoints = (
     '  --font-sans: "Inter", "Segoe UI", sans-serif;',
     '  --color-background: #020617;',
     '  --color-foreground: #f8fafc;',
+    '  --color-surface: #0f172a;',
+    '  --color-surface-foreground: #f8fafc;',
     '  --color-card: #0f172a;',
     '  --color-card-foreground: #f8fafc;',
     '  --color-popover: #0f172a;',
@@ -1332,6 +1417,17 @@ const ensureTailwindEntrypoints = (
     '  --color-border: #cbd5e1;',
     '  --color-input: #cbd5e1;',
     '  --color-ring: #60a5fa;',
+    '  --color-navy-50: #eff6ff;',
+    '  --color-navy-100: #dbeafe;',
+    '  --color-navy-200: #bfdbfe;',
+    '  --color-navy-300: #93c5fd;',
+    '  --color-navy-400: #60a5fa;',
+    '  --color-navy-500: #3b82f6;',
+    '  --color-navy-600: #2563eb;',
+    '  --color-navy-700: #1d4ed8;',
+    '  --color-navy-800: #1e3a8a;',
+    '  --color-navy-900: #172554;',
+    '  --color-navy-950: #0f172a;',
     '  --color-primary-dark: #0f172a;',
     '  --color-secondary-light: #f8fafc;',
     '  --color-accent-primary: #2563eb;',
@@ -1345,6 +1441,10 @@ const ensureTailwindEntrypoints = (
     '',
     '@utility bg-background { background-color: var(--color-background); }',
     '@utility text-foreground { color: var(--color-foreground); }',
+    '@utility bg-surface { background-color: var(--color-surface); }',
+    '@utility text-surface { color: var(--color-surface); }',
+    '@utility text-surface-foreground { color: var(--color-surface-foreground); }',
+    '@utility border-surface { border-color: var(--color-surface); }',
     '@utility bg-card { background-color: var(--color-card); }',
     '@utility text-card-foreground { color: var(--color-card-foreground); }',
     '@utility bg-popover { background-color: var(--color-popover); }',
@@ -1406,6 +1506,8 @@ const ensureTailwindEntrypoints = (
     value
       .replace(/theme\(['"]colors\.background['"]\)/gi, 'var(--color-background)')
       .replace(/theme\(['"]colors\.foreground['"]\)/gi, 'var(--color-foreground)')
+      .replace(/theme\(['"]colors\.surface['"]\)/gi, 'var(--color-surface)')
+      .replace(/theme\(['"]colors\.surface-foreground['"]\)/gi, 'var(--color-surface-foreground)')
       .replace(/theme\(['"]colors\.card['"]\)/gi, 'var(--color-card)')
       .replace(/theme\(['"]colors\.card-foreground['"]\)/gi, 'var(--color-card-foreground)')
       .replace(/theme\(['"]colors\.primary['"]\)/gi, 'var(--color-primary)')
@@ -1426,13 +1528,47 @@ const ensureTailwindEntrypoints = (
       .replace(/theme\(['"]colors\.gray-muted['"]\)/gi, 'var(--color-gray-muted)')
       .replace(/theme\(['"]colors\.border-color['"]\)/gi, 'var(--color-border-color)');
 
+  const hasBalancedCssBlocks = (value: string) => {
+    let braceBalance = 0;
+    let parenBalance = 0;
+    for (const char of value) {
+      if (char === '{') braceBalance += 1;
+      if (char === '}') braceBalance -= 1;
+      if (char === '(') parenBalance += 1;
+      if (char === ')') parenBalance -= 1;
+      if (braceBalance < 0 || parenBalance < 0) return false;
+    }
+    return braceBalance === 0 && parenBalance === 0;
+  };
+
+  const sanitizeTailwindCssContent = (value: string) => {
+    const normalized = normalizeThemeReferences(
+      value
+        .replace(/@import\s+["']tailwindcss["'];?\s*/gi, '')
+        .replace(/@tailwind\s+base;\s*/gi, '')
+        .replace(/@tailwind\s+components;\s*/gi, '')
+        .replace(/@tailwind\s+utilities;\s*/gi, '')
+        .replace(/@theme\s*\{[\s\S]*?\}\s*/gi, '')
+        .replace(/@utility\s+[^{]+\{[^{}]*\}\s*/gi, '')
+        .replace(/@apply\s+border-border\s*;/gi, 'border-color: var(--color-border);')
+        .replace(/@apply\s+bg-background\s*;/gi, 'background-color: var(--color-background);')
+        .replace(/@apply\s+text-foreground\s*;/gi, 'color: var(--color-foreground);')
+        .replace(/@apply\s+bg-surface\s*;/gi, 'background-color: var(--color-surface);')
+        .replace(/@apply\s+text-surface\s*;/gi, 'color: var(--color-surface);')
+        .replace(/@apply\s+text-surface-foreground\s*;/gi, 'color: var(--color-surface-foreground);')
+        .replace(/@apply\s+border-surface\s*;/gi, 'border-color: var(--color-surface);')
+        .replace(/@apply\s+bg-card\s*;/gi, 'background-color: var(--color-card);')
+        .replace(/@apply\s+text-card-foreground\s*;/gi, 'color: var(--color-card-foreground);')
+        .trim()
+    );
+
+    if (!normalized) return '';
+    return hasBalancedCssBlocks(normalized) ? normalized : '';
+  };
+
   ensureFile('src/index.css', (existing) => {
     if (existing && /\bimport\s+['"]\.\/index\.css['"]|ReactDOM\.createRoot|from\s+['"]react['"]/i.test(existing)) {
       return buildDefaultTailwindIndexCss();
-    }
-
-    if (existing && /@import\s+["']tailwindcss["'];/i.test(existing)) {
-      return normalizeThemeReferences(existing);
     }
 
     const base = buildDefaultTailwindIndexCss();
@@ -1441,20 +1577,9 @@ const ensureTailwindEntrypoints = (
       return base;
     }
 
-    const sanitizedExisting = normalizeThemeReferences(
-      existing
-        .replace(/@tailwind\s+base;\s*/gi, '')
-        .replace(/@tailwind\s+components;\s*/gi, '')
-        .replace(/@tailwind\s+utilities;\s*/gi, '')
-        .replace(/@apply\s+border-border\s*;/gi, 'border-color: var(--color-border);')
-        .replace(/@apply\s+bg-background\s*;/gi, 'background-color: var(--color-background);')
-        .replace(/@apply\s+text-foreground\s*;/gi, 'color: var(--color-foreground);')
-        .replace(/@apply\s+bg-card\s*;/gi, 'background-color: var(--color-card);')
-        .replace(/@apply\s+text-card-foreground\s*;/gi, 'color: var(--color-card-foreground);')
-        .trim()
-    );
+    const sanitizedExisting = sanitizeTailwindCssContent(existing);
 
-    return `${base}\n${sanitizedExisting}\n`;
+    return sanitizedExisting ? `${base}\n${sanitizedExisting}\n` : base;
   });
 
   ensureFile('src/main.tsx', (existing) => {
@@ -1604,6 +1729,16 @@ const ensureGeneratedPackageManifest = (
   const existingDependencies = { ...(manifest.dependencies || {}) };
   const existingDevDependencies = { ...(manifest.devDependencies || {}) };
   const { runtimeDeps, devDeps } = collectGeneratedPackageRequirements(generatedFiles);
+  const enforcesCapacitorWebRuntime = generatedFiles.some((file) => {
+    const relativePath = normalizePath(file.relativePath);
+    return (
+      relativePath === 'capacitor.config.ts' ||
+      relativePath === 'vite.config.ts' ||
+      relativePath === 'index.html' ||
+      relativePath === 'src/main.tsx' ||
+      /CapacitorConfig|@capacitor\/core|@capacitor\/cli/i.test(file.content)
+    );
+  });
 
   runtimeDeps.forEach((dependency) => {
     if (KNOWN_RUNTIME_DEPENDENCIES[dependency]) {
@@ -1624,6 +1759,13 @@ const ensureGeneratedPackageManifest = (
     if (existingDependencies[dependency] || existingDevDependencies[dependency]) return;
     existingDevDependencies[dependency] = 'latest';
   });
+
+  if (enforcesCapacitorWebRuntime) {
+    CAPACITOR_WEB_INCOMPATIBLE_DEPENDENCIES.forEach((dependency) => {
+      delete existingDependencies[dependency];
+      delete existingDevDependencies[dependency];
+    });
+  }
 
   const nextManifest = {
     ...workspaceManifest,
@@ -2054,7 +2196,7 @@ export const normalizeGeneratedFrontendFiles = (
       .map((name) => normalizePath(currentDir ? `${currentDir}/${name}` : name))
       .filter((candidate, index, array) => array.indexOf(candidate) === index);
 
-    let nextContent = generatedFile.content.replace(
+    let nextContent = ensureValidGeneratedComponentShape(generatedFile.relativePath, generatedFile.content).replace(
       /(import\s+["'])(\.[^"']+\.css)(["'];?)/g,
       (_fullMatch, prefix: string, importPath: string, suffix: string) => {
         const resolvedTarget = resolveRelativeImportTarget(generatedFile.relativePath, importPath);

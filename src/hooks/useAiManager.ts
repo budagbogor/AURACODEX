@@ -3,7 +3,7 @@ import { getGeminiAI } from '../services/geminiService';
 import { fetchOpenRouterModels, generateOpenRouterContent } from '../services/openRouterService';
 import { fetchBytezModels, generateBytezContent } from '../services/bytezService';
 import { generateSumopodContent } from '../services/sumopodService';
-import { fetchPuterModels, generatePuterContent } from '../services/puterService';
+import { ensurePuterSignedIn, fetchPuterModels, generatePuterContent, isPuterSignedIn, preparePuterClient, signInPuterInteractive } from '../services/puterService';
 
 export const useAiManager = (appendTerminalOutput: (data: string | string[]) => void) => {
   const store = useAppStore();
@@ -113,6 +113,50 @@ export const useAiManager = (appendTerminalOutput: (data: string | string[]) => 
     }
   };
 
+  const preparePuter = async () => {
+    try {
+      await preparePuterClient();
+    } catch (err) {
+      console.error('Failed to prepare Puter.js:', err);
+    }
+  };
+
+  const signInPuter = async () => {
+    store.setTestingStatus((prev: any) => ({ ...prev, puter: 'loading' }));
+    store.setTestError((prev: any) => ({ ...prev, puter: '' }));
+    appendTerminalOutput('[AI] Membuka login Puter.js...');
+    try {
+      await withTimeout(signInPuterInteractive(), CONNECTION_TEST_TIMEOUT_MS, 'Login Puter.js timeout. Coba lagi.');
+      const signedIn = await isPuterSignedIn();
+      if (!signedIn) {
+        throw new Error('Login Puter.js belum aktif setelah popup ditutup.');
+      }
+      store.setTestingStatus((prev: any) => ({ ...prev, puter: 'success' }));
+      store.setTestMeta((prev: any) => ({
+        ...prev,
+        puter: {
+          checkedAt: Date.now(),
+          model: store.puterModel,
+          success: true
+        }
+      }));
+      appendTerminalOutput('[AI] Puter.js sign-in berhasil.');
+    } catch (err: any) {
+      const message = normalizeAiError(err);
+      store.setTestingStatus((prev: any) => ({ ...prev, puter: 'error' }));
+      store.setTestError((prev: any) => ({ ...prev, puter: message }));
+      store.setTestMeta((prev: any) => ({
+        ...prev,
+        puter: {
+          checkedAt: Date.now(),
+          model: store.puterModel,
+          success: false
+        }
+      }));
+      appendTerminalOutput(`[AI ERROR] Puter.js sign-in gagal. ${message}`);
+    }
+  };
+
   const testAiConnection = async (provider: any) => {
     const activeModel = provider === 'openrouter'
       ? store.openRouterModel
@@ -187,6 +231,7 @@ export const useAiManager = (appendTerminalOutput: (data: string | string[]) => 
         );
         validateDeepTestResponse(provider, response);
       } else if (provider === 'puter') {
+        await ensurePuterSignedIn(false);
         const response = await withTimeout(
           generatePuterContent(store.puterModel, [{ role: 'user', content: CONNECTION_TEST_PROBE }], true),
           CONNECTION_TEST_TIMEOUT_MS,
@@ -262,6 +307,8 @@ export const useAiManager = (appendTerminalOutput: (data: string | string[]) => 
     ...store,
     activeModel: getActiveModel(),
     refreshModels,
+    preparePuter,
+    signInPuter,
     testAiConnection,
     applyStagingCode,
     mcpTools: store.mcpServers.flatMap((server: any) =>

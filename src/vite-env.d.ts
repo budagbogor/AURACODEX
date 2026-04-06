@@ -8,6 +8,10 @@ declare module '*.csv?raw' {
 declare global {
   interface Window {
     puter?: {
+      auth?: {
+        isSignedIn?: () => boolean | Promise<boolean>;
+        signIn?: () => Promise<any>;
+      };
       ai?: {
         chat: (
           promptOrMessages: string | Array<{ role: string; content: any }>,

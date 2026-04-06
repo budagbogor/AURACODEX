@@ -105,6 +105,8 @@ import { BYTEZ_MODELS as BYTEZ_MODEL_FALLBACK } from '@/services/bytezService';
 const MonacoEditor = lazy(() => import('@monaco-editor/react'));
 const MonacoDiffEditor = lazy(() => import('@monaco-editor/react').then((module) => ({ default: module.DiffEditor })));
 
+const GITHUB_REPO_URL_PATTERN = /https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\.git)?(?:\/)?/i;
+
 
 
 
@@ -133,7 +135,13 @@ export default function AppFull() {
   const [showConnectRepoModal, setShowConnectRepoModal] = useState(false);
   const [connectRepoUrl, setConnectRepoUrl] = useState('');
   const [connectRepoBranch, setConnectRepoBranch] = useState('main');
+  const [connectRepoToken, setConnectRepoToken] = useState(() => localStorage.getItem('aura_github_token') || '');
   const [isConnectingRepo, setIsConnectingRepo] = useState(false);
+  const [isTestingGithubToken, setIsTestingGithubToken] = useState(false);
+  const [githubTokenStatus, setGithubTokenStatus] = useState<{
+    tone: 'idle' | 'success' | 'error';
+    message: string;
+  }>({ tone: 'idle', message: '' });
   const [detectedOriginUrl, setDetectedOriginUrl] = useState('');
   const [draftViewMode, setDraftViewMode] = useState<'editor' | 'diff'>('diff');
   const [openFileTabs, setOpenFileTabs] = useState<string[]>([]);
@@ -175,6 +183,12 @@ export default function AppFull() {
     }
   );
   const aiManager = useAiManager(terminal.appendTerminalOutput);
+
+  useEffect(() => {
+    if (showAiSettings && store.aiProvider === 'puter') {
+      void aiManager.preparePuter();
+    }
+  }, [showAiSettings, store.aiProvider]);
 
   const activeFile = useMemo(
     () => store.files.find((file) => file.id === store.activeFileId) || store.files[0] || null,
@@ -1680,9 +1694,13 @@ export default function AppFull() {
     });
 
     const result = await command.execute();
+    const resultStdout = `${result.stdout || ''}`.trim();
+    const resultStderr = `${result.stderr || ''}`.trim();
+    if (resultStdout) outputLines.push(resultStdout);
+    if (resultStderr) outputLines.push(resultStderr);
     return {
       code: result.code,
-      output: outputLines.join('\n').trim()
+      output: Array.from(new Set(outputLines)).join('\n').trim()
     };
   };
 
@@ -1719,6 +1737,15 @@ export default function AppFull() {
     };
   };
 
+  const listWorkspaceGitRemotes = async (workspacePath: string) => {
+    const remoteListResult = await runGitCommandInWorkspace(['remote'], workspacePath);
+    if (remoteListResult.code !== 0) return [];
+    return remoteListResult.output
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  };
+
   const handleOpenConnectRepoModal = async () => {
     if (!store.nativeProjectPath) {
       setWorkspaceError('Buka workspace proyek dulu sebelum menghubungkan repository GitHub.');
@@ -1730,6 +1757,8 @@ export default function AppFull() {
       setDetectedOriginUrl(gitInfo.originUrl);
       setConnectRepoUrl(gitInfo.originUrl || '');
       setConnectRepoBranch('main');
+      setConnectRepoToken(localStorage.getItem('aura_github_token') || '');
+      setGithubTokenStatus({ tone: 'idle', message: '' });
       setShowConnectRepoModal(true);
       setActiveMenu(null);
     } catch (error: any) {
@@ -1737,19 +1766,94 @@ export default function AppFull() {
     }
   };
 
-  const handleConnectRepository = async () => {
-    const workspacePath = store.nativeProjectPath ? normalizePath(store.nativeProjectPath) : '';
-    const repoUrl = connectRepoUrl.trim();
-    const branchName = connectRepoBranch.trim() || 'main';
+  const handleSaveGithubToken = () => {
+    const token = connectRepoToken.trim();
+    if (!token) {
+      setGithubTokenStatus({ tone: 'error', message: 'Token masih kosong, belum ada yang disimpan.' });
+      return;
+    }
+    localStorage.setItem('aura_github_token', token);
+    setConnectRepoToken(token);
+    setGithubTokenStatus({ tone: 'success', message: 'GitHub token berhasil disimpan lokal di AURA.' });
+  };
 
-    if (!workspacePath) {
-      setWorkspaceError('Workspace aktif belum tersedia.');
+  const handleClearGithubToken = () => {
+    localStorage.removeItem('aura_github_token');
+    setConnectRepoToken('');
+    setGithubTokenStatus({ tone: 'idle', message: 'GitHub token dihapus dari penyimpanan lokal AURA.' });
+  };
+
+  const handleTestGithubToken = async () => {
+    const token = connectRepoToken.trim();
+    if (!token) {
+      setGithubTokenStatus({ tone: 'error', message: 'Isi GitHub token dulu sebelum menjalankan test.' });
       return;
     }
 
-    if (!repoUrl) {
+    setIsTestingGithubToken(true);
+    setGithubTokenStatus({ tone: 'idle', message: 'Sedang menguji token GitHub...' });
+
+    try {
+      const response = await fetch('https://api.github.com/user', {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          Authorization: `Bearer ${token}`,
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.message || `HTTP ${response.status}`);
+      }
+
+      const payload = await response.json() as { login?: string };
+      localStorage.setItem('aura_github_token', token);
+      setConnectRepoToken(token);
+      setGithubTokenStatus({
+        tone: 'success',
+        message: `GitHub token valid${payload?.login ? ` untuk akun ${payload.login}` : ''}.`
+      });
+    } catch (error: any) {
+      setGithubTokenStatus({
+        tone: 'error',
+        message: `GitHub token gagal dipakai: ${error?.message || 'unknown error'}.`
+      });
+    } finally {
+      setIsTestingGithubToken(false);
+    }
+  };
+
+  const publishWorkspaceToGithub = async ({
+    repoUrl,
+    branchName,
+    token,
+    closeModalOnSuccess = true,
+    source = 'modal'
+  }: {
+    repoUrl: string;
+    branchName: string;
+    token?: string;
+    closeModalOnSuccess?: boolean;
+    source?: 'modal' | 'chat';
+  }) => {
+    const workspacePath = store.nativeProjectPath ? normalizePath(store.nativeProjectPath) : '';
+    const normalizedRepoUrl = repoUrl.trim();
+    const normalizedBranchName = branchName.trim() || 'main';
+
+    if (!workspacePath) {
+      setWorkspaceError('Workspace aktif belum tersedia.');
+      return false;
+    }
+
+    if (!normalizedRepoUrl) {
       setWorkspaceError('URL repository GitHub wajib diisi.');
-      return;
+      return false;
+    }
+
+    const effectiveToken = (token || connectRepoToken).trim();
+    if (effectiveToken) {
+      localStorage.setItem('aura_github_token', effectiveToken);
     }
 
     setIsConnectingRepo(true);
@@ -1758,6 +1862,9 @@ export default function AppFull() {
     try {
       const gitInfo = await inspectWorkspaceGitConnection(workspacePath);
       terminal.appendTerminalOutput(`[AURA] Menyiapkan koneksi Git untuk workspace: ${workspacePath}`);
+      if (source === 'chat') {
+        terminal.appendTerminalOutput(`[AURA] Perintah chat terdeteksi: publish workspace ke ${normalizedRepoUrl}`);
+      }
 
       if (!gitInfo.hasLocalGit) {
         terminal.appendTerminalOutput('[AURA] Repo Git lokal belum ada. Menjalankan `git init`...');
@@ -1767,29 +1874,51 @@ export default function AppFull() {
         }
       }
 
-      const branchResult = await runGitCommandInWorkspace(['branch', '-M', branchName], workspacePath);
+      const branchResult = await runGitCommandInWorkspace(['branch', '-M', normalizedBranchName], workspacePath);
       if (branchResult.code === 0) {
-        terminal.appendTerminalOutput(`[AURA] Branch default diarahkan ke ${branchName}.`);
+        terminal.appendTerminalOutput(`[AURA] Branch default diarahkan ke ${normalizedBranchName}.`);
+      } else if (branchResult.output) {
+        terminal.appendTerminalOutput(`[AURA][git] ${branchResult.output}`);
       }
 
       const refreshedGitInfo = await inspectWorkspaceGitConnection(workspacePath);
       if (refreshedGitInfo.originUrl) {
-        if (normalizePath(refreshedGitInfo.originUrl) !== normalizePath(repoUrl)) {
+        if (normalizePath(refreshedGitInfo.originUrl) !== normalizePath(normalizedRepoUrl)) {
           terminal.appendTerminalOutput(`[AURA] Remote origin lama terdeteksi: ${refreshedGitInfo.originUrl}`);
-          const setUrlResult = await runGitCommandInWorkspace(['remote', 'set-url', 'origin', repoUrl], workspacePath);
+          const setUrlResult = await runGitCommandInWorkspace(['remote', 'set-url', 'origin', normalizedRepoUrl], workspacePath);
           if (setUrlResult.code !== 0) {
+            if (setUrlResult.output) {
+              terminal.appendTerminalOutput(`[AURA][git] ${setUrlResult.output}`);
+            }
             throw new Error(setUrlResult.output || 'git remote set-url origin failed.');
           }
-          terminal.appendTerminalOutput(`[AURA] Remote origin diperbarui ke ${repoUrl}`);
+          terminal.appendTerminalOutput(`[AURA] Remote origin diperbarui ke ${normalizedRepoUrl}`);
         } else {
-          terminal.appendTerminalOutput(`[AURA] Remote origin sudah mengarah ke ${repoUrl}`);
+          terminal.appendTerminalOutput(`[AURA] Remote origin sudah mengarah ke ${normalizedRepoUrl}`);
         }
       } else {
-        const addRemoteResult = await runGitCommandInWorkspace(['remote', 'add', 'origin', repoUrl], workspacePath);
+        const addRemoteResult = await runGitCommandInWorkspace(['remote', 'add', 'origin', normalizedRepoUrl], workspacePath);
         if (addRemoteResult.code !== 0) {
-          throw new Error(addRemoteResult.output || 'git remote add origin failed.');
+          if (addRemoteResult.output) {
+            terminal.appendTerminalOutput(`[AURA][git] ${addRemoteResult.output}`);
+          }
+          const remoteNames = await listWorkspaceGitRemotes(workspacePath);
+          if (remoteNames.includes('origin')) {
+            terminal.appendTerminalOutput('[AURA] Remote origin ternyata sudah ada. Mencoba memperbarui URL origin...');
+            const setUrlResult = await runGitCommandInWorkspace(['remote', 'set-url', 'origin', normalizedRepoUrl], workspacePath);
+            if (setUrlResult.code !== 0) {
+              if (setUrlResult.output) {
+                terminal.appendTerminalOutput(`[AURA][git] ${setUrlResult.output}`);
+              }
+              throw new Error(setUrlResult.output || addRemoteResult.output || 'git remote set-url origin failed.');
+            }
+            terminal.appendTerminalOutput(`[AURA] Remote origin diperbarui ke ${normalizedRepoUrl}`);
+          } else {
+            throw new Error(addRemoteResult.output || 'git remote add origin failed.');
+          }
+        } else {
+          terminal.appendTerminalOutput(`[AURA] Remote origin berhasil ditambahkan: ${normalizedRepoUrl}`);
         }
-        terminal.appendTerminalOutput(`[AURA] Remote origin berhasil ditambahkan: ${repoUrl}`);
       }
 
       terminal.appendTerminalOutput('[AURA] Menambahkan semua perubahan workspace ke staging...');
@@ -1807,7 +1936,15 @@ export default function AppFull() {
       if (hasChangesToCommit) {
         terminal.appendTerminalOutput('[AURA] Membuat commit otomatis untuk sinkronisasi workspace...');
         const commitResult = await runGitCommandInWorkspace(
-          ['commit', '-m', 'chore: publish workspace from AURA IDE'],
+          [
+            '-c',
+            'user.name=AURA IDE',
+            '-c',
+            'user.email=aura@local',
+            'commit',
+            '-m',
+            'chore: publish workspace from AURA IDE'
+          ],
           workspacePath
         );
         if (commitResult.code !== 0) {
@@ -1817,8 +1954,8 @@ export default function AppFull() {
         terminal.appendTerminalOutput('[AURA] Tidak ada perubahan baru untuk di-commit. Melanjutkan ke proses push.');
       }
 
-      terminal.appendTerminalOutput(`[AURA] Mendorong branch ${branchName} ke GitHub...`);
-      const pushArgs = buildGitPushArgs(branchName, repoUrl);
+      terminal.appendTerminalOutput(`[AURA] Mendorong branch ${normalizedBranchName} ke GitHub...`);
+      const pushArgs = buildGitPushArgs(normalizedBranchName, normalizedRepoUrl);
       const pushResult = await runGitCommandInWorkspace(pushArgs, workspacePath);
       if (pushResult.code !== 0) {
         throw new Error(
@@ -1827,16 +1964,36 @@ export default function AppFull() {
         );
       }
 
-      setDetectedOriginUrl(repoUrl);
-      setShowConnectRepoModal(false);
+      setDetectedOriginUrl(normalizedRepoUrl);
+      if (closeModalOnSuccess) {
+        setShowConnectRepoModal(false);
+      }
       terminal.appendTerminalOutput('[AURA] Workspace berhasil dipublish ke GitHub. Repo lokal, remote origin, commit, dan push sudah selesai otomatis.');
+      if (source === 'chat') {
+        store.setChatMessages((prev) => [...prev, { role: 'assistant', content: `[AURA] Project berhasil dipublish ke ${normalizedRepoUrl}` }]);
+      }
+      return true;
     } catch (error: any) {
       const message = error?.message || 'Gagal menghubungkan workspace ke repository GitHub.';
       setWorkspaceError(message);
       terminal.appendTerminalOutput(`[AURA ERROR] ${message}`);
+      if (source === 'chat') {
+        store.setChatMessages((prev) => [...prev, { role: 'assistant', content: `[AURA GITHUB ERROR] ${message}` }]);
+      }
+      return false;
     } finally {
       setIsConnectingRepo(false);
     }
+  };
+
+  const handleConnectRepository = async () => {
+    await publishWorkspaceToGithub({
+      repoUrl: connectRepoUrl,
+      branchName: connectRepoBranch,
+      token: connectRepoToken,
+      closeModalOnSuccess: true,
+      source: 'modal'
+    });
   };
 
   const handleAiProviderChange = (provider: AiProvider) => {
@@ -2212,6 +2369,56 @@ export default function AppFull() {
   const handleSendAiPrompt = async () => {
     const prompt = store.chatInput.trim();
     if (!prompt) return;
+    const githubRepoUrlMatch = prompt.match(GITHUB_REPO_URL_PATTERN);
+    const isGithubPublishIntent = Boolean(
+      githubRepoUrlMatch?.[0] &&
+      /\b(push|publish|upload|unggah|kirim|hubungkan|connect|repo|repository|github)\b/i.test(prompt)
+    );
+    if (isGithubPublishIntent && githubRepoUrlMatch?.[0]) {
+      const repoUrl = githubRepoUrlMatch[0].replace(/\/$/, '');
+      const token = localStorage.getItem('aura_github_token') || connectRepoToken.trim();
+      store.setChatMessages((prev) => [...prev, { role: 'user', content: prompt }]);
+      store.setChatInput('');
+      store.setAttachedFiles([]);
+      store.setShowAiPanel(true);
+      store.setShowBottomPanel(true);
+
+      if (!store.nativeProjectPath) {
+        const message = 'Buka atau buat workspace dulu sebelum publish ke GitHub.';
+        terminal.appendTerminalOutput(`[AURA GITHUB] ${message}`);
+        store.setChatMessages((prev) => [...prev, { role: 'assistant', content: `[AURA] ${message}` }]);
+        setWorkspaceError(message);
+        return;
+      }
+
+      if (!token) {
+        setConnectRepoUrl(repoUrl);
+        setConnectRepoBranch('main');
+        setConnectRepoToken('');
+        setGithubTokenStatus({
+          tone: 'error',
+          message: 'Token GitHub belum tersimpan. Isi token, test, lalu klik Init, Connect & Push.'
+        });
+        setShowConnectRepoModal(true);
+        const message = 'Saya menemukan URL GitHub di prompt, tetapi token GitHub belum tersimpan. Modal Connect GitHub sudah dibuka dan URL repo sudah diisi.';
+        terminal.appendTerminalOutput(`[AURA GITHUB] ${message}`);
+        store.setChatMessages((prev) => [...prev, { role: 'assistant', content: `[AURA] ${message}` }]);
+        return;
+      }
+
+      setConnectRepoUrl(repoUrl);
+      setConnectRepoBranch(connectRepoBranch.trim() || 'main');
+      setConnectRepoToken(token);
+      terminal.appendTerminalOutput(`[AURA GITHUB] Menjalankan publish otomatis dari prompt chat ke ${repoUrl}`);
+      await publishWorkspaceToGithub({
+        repoUrl,
+        branchName: connectRepoBranch.trim() || 'main',
+        token,
+        closeModalOnSuccess: false,
+        source: 'chat'
+      });
+      return;
+    }
     const runId = aiRunIdRef.current + 1;
     aiRunIdRef.current = runId;
     activeAiActivityIdRef.current = null;
@@ -3196,6 +3403,7 @@ export default function AppFull() {
         onRefreshModels={aiManager.refreshModels}
         onResetProvider={handleResetCurrentProvider}
         onTestConnection={() => aiManager.testAiConnection(store.aiProvider)}
+        onSignInPuter={aiManager.signInPuter}
         onCredentialChange={handleAiCredentialChange}
         onToggleAutoApplyDrafts={store.setAiAutoApplyDrafts}
         onApplyDeveloperTaskPreset={handleApplyDeveloperTaskPreset}
@@ -3336,8 +3544,61 @@ export default function AppFull() {
                   className="h-10 w-full rounded-xl border border-white/10 bg-[#101010] px-3 text-sm text-white outline-none placeholder:text-[#666] focus:border-blue-500/40"
                 />
               </div>
+              <div>
+                <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-[#8a8a8a]">
+                  <span>GitHub Token</span>
+                  <span className="text-[10px] normal-case tracking-normal text-[#6f7785]">Classic PAT atau fine-grained token</span>
+                </div>
+                <input
+                  type="password"
+                  value={connectRepoToken}
+                  onChange={(event) => {
+                    setConnectRepoToken(event.target.value);
+                    setGithubTokenStatus({ tone: 'idle', message: '' });
+                  }}
+                  placeholder="ghp_... atau github_pat_..."
+                  className="h-10 w-full rounded-xl border border-white/10 bg-[#101010] px-3 text-sm text-white outline-none placeholder:text-[#666] focus:border-blue-500/40"
+                />
+                <div className="mt-2 text-[11px] leading-5 text-[#8e97a6]">
+                  Token ini dipakai untuk push HTTPS ke GitHub dan disimpan lokal di AURA. Jika kosong, AURA tetap mencoba memakai kredensial Git yang sudah ada di sistem.
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => void handleTestGithubToken()}
+                    disabled={isTestingGithubToken}
+                    className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-[11px] font-semibold text-blue-200 hover:bg-blue-500/15 disabled:opacity-50"
+                  >
+                    {isTestingGithubToken ? 'Testing...' : 'Test Token'}
+                  </button>
+                  <button
+                    onClick={handleSaveGithubToken}
+                    className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-semibold text-emerald-200 hover:bg-emerald-500/15"
+                  >
+                    Save Token
+                  </button>
+                  <button
+                    onClick={handleClearGithubToken}
+                    className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-[#d5d8de] hover:bg-white/[0.08]"
+                  >
+                    Clear Token
+                  </button>
+                </div>
+                {githubTokenStatus.message ? (
+                  <div
+                    className={`mt-3 rounded-lg border px-3 py-2 text-[11px] leading-5 ${
+                      githubTokenStatus.tone === 'success'
+                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-100'
+                        : githubTokenStatus.tone === 'error'
+                          ? 'border-red-500/20 bg-red-500/10 text-red-200'
+                          : 'border-white/10 bg-white/[0.03] text-[#c5ccd8]'
+                    }`}
+                  >
+                    {githubTokenStatus.message}
+                  </div>
+                ) : null}
+              </div>
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs leading-5 text-emerald-100">
-                AURA akan membuat repo Git lokal jika workspace ini belum punya <code>.git</code>, lalu menambahkan atau memperbarui remote <code>origin</code>, membuat commit otomatis, dan langsung push ke GitHub. Jika token GitHub tersimpan di Settings, AURA akan memakainya otomatis.
+                AURA akan membuat repo Git lokal jika workspace ini belum punya <code>.git</code>, lalu menambahkan atau memperbarui remote <code>origin</code>, membuat commit otomatis, dan langsung push ke GitHub. Jika token GitHub diisi di sini, AURA akan memakainya otomatis untuk push.
               </div>
             </div>
             <div className="flex items-center justify-end gap-2 border-t border-white/5 bg-[#252526] px-4 py-3">

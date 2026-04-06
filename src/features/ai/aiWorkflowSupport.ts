@@ -218,13 +218,20 @@ export const buildWebProductionModeContract = () => [
 
 export const buildMobileAppModeContract = () => [
   'Mobile App Mode Contract:',
-  '- Untuk request mobile app, gunakan baseline Capacitor + React yang deterministik, bukan hanya halaman web yang dipersempit.',
+  '- Default AURA untuk mobile adalah Capacitor + React kecuali user secara eksplisit meminta Expo atau React Native. Gunakan pola dari skill Expo/React Native sebagai quality guidance, bukan dependency default.',
+  '- Mulai dari mobile app map: layar utama, pola navigasi, app shell, persistent actions, dan state/data model sebelum menulis komponen.',
   '- Entry app tetap harus sehat sebagai Vite React app, tetapi tambahkan capacitor.config.ts yang valid untuk menyiapkan jalur hybrid mobile.',
-  '- Susun layar seperti aplikasi: app shell, header atau top bar, bottom navigation atau tab pattern bila cocok, dan screen-level sections yang terasa touch-first.',
-  '- Prioritaskan file di src/App.tsx, src/main.tsx, src/components/*, src/pages/* atau src/screens/*, src/data/*, dan capacitor.config.ts.',
-  '- Jaga touch targets nyaman, spacing lebih padat dari web desktop, dan hindari layout marketing page yang hanya disamarkan sebagai mobile app.',
-  '- Jika user meminta data nyata, siapkan seed data screen-friendly seperti cards, lists, stats, booking slots, vehicles, orders, notifications, atau account summaries sesuai konteks app.',
-  '- Jangan membuat folder android/ atau ios/ dari model secara bebas. Cukup siapkan scaffold konfigurasi dan aplikasi utama yang mobile-ready.'
+  '- Susun layar seperti aplikasi: top app bar, bottom tabs untuk 3-5 destinasi utama bila cocok, stack/detail screen untuk drill-down, dan back affordance yang jelas.',
+  '- Prioritaskan file di src/App.tsx, src/main.tsx, src/components/*, src/pages/* atau src/screens/*, src/data/*, src/hooks/*, src/lib/*, src/assets/*, dan capacitor.config.ts.',
+  '- Jaga safe area, touch targets, scroll containers, keyboard overlap, sticky bottom actions, spacing mobile-first, dan hindari layout marketing page yang hanya disamarkan sebagai mobile app.',
+  '- Untuk list dan feed, gunakan seed arrays di src/data/*, key stabil, card/row reusable, empty/loading/error/offline states, serta hindari satu file raksasa berisi DOM statis.',
+  '- Jika user meminta data nyata, siapkan seed data screen-friendly seperti cards, lists, stats, booking slots, vehicles, orders, notifications, chats, cart items, atau account summaries sesuai konteks app.',
+  '- Sertakan strategi gambar/media yang realistis: src/assets, inline SVG, URL gambar masuk akal, atau fallback visual yang tetap rapi. Jangan tinggalkan image slot kosong.',
+  '- Tambahkan state mobile penting jika relevan: permission denied, network/offline, sync pending, disabled submit, skeleton/loading, empty result, dan validasi form.',
+  '- Untuk baseline Capacitor + React, jangan menambahkan package React Native atau Expo seperti tailwindcss-react-native, nativewind, react-native, expo, metro, atau @react-navigation/* kecuali user secara eksplisit meminta stack React Native/Expo.',
+  '- Jangan membuat app.json, babel.config.js, atau metro.config.js untuk baseline Capacitor + React. Gunakan vite.config.ts, tsconfig.json, package.json, src/index.css, dan capacitor.config.ts.',
+  '- Jaga package tetap ramping. Jangan menambah native plugin kecuali prompt membutuhkan kamera, geolocation, filesystem, notifications, biometrics, atau capability native spesifik.',
+  '- Jangan membuat folder android/ atau ios/ dari model secara bebas. Cukup siapkan scaffold konfigurasi dan aplikasi utama yang mobile-ready sampai user meminta native sync/build.'
 ].join('\n');
 
 export const buildComponentSystemQualityGate = () => [

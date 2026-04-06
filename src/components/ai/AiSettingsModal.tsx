@@ -46,6 +46,7 @@ type Props = {
   onRefreshModels: () => void | Promise<void>;
   onResetProvider: () => void;
   onTestConnection: () => void | Promise<void>;
+  onSignInPuter?: () => void | Promise<void>;
   onCredentialChange: (value: string) => void;
   onToggleAutoApplyDrafts: (enabled: boolean) => void;
   onApplyDeveloperTaskPreset: (presetId: string) => void;
@@ -80,6 +81,7 @@ export function AiSettingsModal(props: Props) {
     onRefreshModels,
     onResetProvider,
     onTestConnection,
+    onSignInPuter,
     onCredentialChange,
     onToggleAutoApplyDrafts,
     onApplyDeveloperTaskPreset,
@@ -268,6 +270,12 @@ export function AiSettingsModal(props: Props) {
               <RotateCcw size={13} />
               Reset Provider
             </button>
+            {provider === 'puter' ? (
+              <button onClick={() => void onSignInPuter?.()} disabled={testingStatus === 'loading'} className="inline-flex items-center gap-2 rounded-xl border border-sky-500/25 bg-sky-500/10 px-3 py-2 text-[11px] font-semibold text-sky-100 transition-colors hover:bg-sky-500/15 disabled:opacity-40">
+                <Play size={13} />
+                Sign In Puter
+              </button>
+            ) : null}
             <button onClick={() => void onTestConnection()} disabled={testingStatus === 'loading' || (provider !== 'puter' && provider !== 'ollama' && !activeAiCredential.trim())} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-40">
               <Play size={13} />
               {testingStatus === 'loading' ? 'Testing...' : 'Deep Test'}
@@ -279,6 +287,7 @@ export function AiSettingsModal(props: Props) {
 
           <div className="rounded-xl border border-white/8 bg-[#0d0d0d] px-3 py-2 text-[11px] leading-5 text-[#98a0ad]">
             Pengaturan ini berlaku global. Deep test sekarang mencoba generate nyata kecil dan memvalidasi token respons, jadi status <code>success</code> lebih dekat ke kondisi API key dan model yang benar-benar bisa dipakai.
+            {provider === 'puter' ? <div className="mt-2 text-sky-200">Puter.js di desktop lebih stabil jika login dipicu dulu lewat tombol <code>Sign In Puter</code>, baru lanjut deep test atau generate.</div> : null}
             {activeTestMeta?.checkedAt ? <div className="mt-2 text-[#7f8795]">Tes terakhir: {new Date(activeTestMeta.checkedAt).toLocaleTimeString()} • model {activeTestMeta.model || '-'}</div> : null}
             {testingStatus === 'error' && testError ? <div className="mt-2 text-red-300">{testError}</div> : null}
             {testingStatus === 'loading' ? <div className="mt-2 text-amber-300">Sedang menjalankan deep test generate kecil. Timeout otomatis 9 detik.</div> : null}
