@@ -1579,15 +1579,54 @@ const ensureTailwindEntrypoints = (
     return braceBalance === 0 && parenBalance === 0;
   };
 
+  const stripCssAtRuleBlocks = (value: string, atRules: string[]) => {
+    let next = value;
+
+    for (const atRule of atRules) {
+      let cursor = 0;
+      while (cursor < next.length) {
+        const index = next.indexOf(atRule, cursor);
+        if (index === -1) break;
+
+        const blockStart = next.indexOf('{', index);
+        if (blockStart === -1) break;
+
+        let depth = 0;
+        let end = -1;
+        for (let i = blockStart; i < next.length; i += 1) {
+          const char = next[i];
+          if (char === '{') depth += 1;
+          if (char === '}') {
+            depth -= 1;
+            if (depth === 0) {
+              end = i;
+              break;
+            }
+          }
+        }
+
+        if (end === -1) break;
+        next = `${next.slice(0, index)}${next.slice(end + 1)}`;
+        cursor = index;
+      }
+    }
+
+    return next;
+  };
+
   const sanitizeTailwindCssContent = (value: string) => {
+    const withoutDuplicateScaffold = stripCssAtRuleBlocks(value, ['@layer base', '@keyframes slideUp']);
+
     const normalized = normalizeThemeReferences(
-      value
+      withoutDuplicateScaffold
         .replace(/@import\s+["']tailwindcss["'];?\s*/gi, '')
         .replace(/@tailwind\s+base;\s*/gi, '')
         .replace(/@tailwind\s+components;\s*/gi, '')
         .replace(/@tailwind\s+utilities;\s*/gi, '')
         .replace(/@theme\s*\{[\s\S]*?\}\s*/gi, '')
         .replace(/@utility\s+[^{]+\{[^{}]*\}\s*/gi, '')
+        .replace(/\btext-text\b/gi, 'text-foreground')
+        .replace(/\bbg-text\b/gi, 'bg-foreground')
         .replace(/@apply\s+border-border\s*;/gi, 'border-color: var(--color-border);')
         .replace(/@apply\s+bg-background\s*;/gi, 'background-color: var(--color-background);')
         .replace(/@apply\s+text-foreground\s*;/gi, 'color: var(--color-foreground);')
@@ -1597,6 +1636,13 @@ const ensureTailwindEntrypoints = (
         .replace(/@apply\s+border-surface\s*;/gi, 'border-color: var(--color-surface);')
         .replace(/@apply\s+bg-card\s*;/gi, 'background-color: var(--color-card);')
         .replace(/@apply\s+text-card-foreground\s*;/gi, 'color: var(--color-card-foreground);')
+        .replace(/@apply\s+([^;]*\btext-foreground\b[^;]*);/gi, (_match, classes: string) => {
+          const remaining = classes
+            .split(/\s+/)
+            .filter(Boolean)
+            .filter((className) => className.toLowerCase() !== 'text-foreground');
+          return `${remaining.length ? `@apply ${remaining.join(' ')};\n` : ''}color: var(--color-foreground);`;
+        })
         .trim()
     );
 

@@ -159,8 +159,10 @@ export const buildTailwindUiContract = () => [
   '- Untuk pekerjaan frontend/UI di AURA, default-kan styling ke Tailwind CSS v4 kecuali user secara eksplisit meminta CSS biasa, SCSS, atau library styling lain.',
   '- Gunakan utility class secara disiplin dengan struktur yang terbaca. Jangan membuat class soup acak tanpa grouping yang jelas.',
   '- Gunakan token warna, spacing, radius, shadow, dan typography secara konsisten melalui kombinasi utility yang stabil.',
+  '- Jangan mengarang utility alias yang tidak didefinisikan, seperti text-text, bg-text, atau border-bg. Gunakan utility Tailwind bawaan atau token AURA yang benar-benar ada.',
   '- Jika ada pola yang berulang, ekstrak ke komponen atau helper class yang masuk akal daripada mengulang blok utility yang kacau.',
   '- Jangan mencampur Tailwind dengan file CSS besar yang redundant kecuali benar-benar dibutuhkan untuk base layer atau animation khusus.',
+  '- Jangan menggandakan @theme, @layer base, atau keyframes yang sama di src/index.css. Jika baseline sudah ada, tambahkan hanya ekstensi yang benar-benar baru.',
   '- Pastikan layout tetap bagus di mobile, tablet, dan desktop menggunakan breakpoint yang sengaja dipilih, bukan sekadar ditumpuk.',
   '- Gunakan layout dengan gap yang konsisten dan hindari spacing acak yang sulit dirawat.',
   '- Untuk komponen bergaya design-system, utamakan struktur utility yang tenang, reusable, dan mudah dipahami.'

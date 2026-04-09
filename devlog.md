@@ -2,6 +2,12 @@
 
 Log rekam jejak historis pengembangan fitur pada AURA AI IDE.
 
+## [2026-04-10] - Tailwind Website Generation Hardening (v15.3.159)
+- **Generator Guardrails**: Menambahkan aturan prompt baru agar AURA tidak lagi mengarang utility Tailwind invalid seperti `text-text`, `bg-text`, atau token yang tidak benar-benar didefinisikan.
+- **CSS Sanitization**: Memperkeras normalisasi `src/index.css` agar blok scaffold duplikat seperti `@layer base`, `@theme`, dan `@keyframes` yang bentrok tidak ikut lolos ke workspace hasil generate.
+- **Recovery Quality**: Jalur ekstraksi file AI kini lebih aman untuk kasus website/full app yang sebelumnya bisa menghasilkan Tailwind overlay error saat preview atau build.
+- **Verification**: Build AURA dan simulasi end-to-end generator website lulus setelah patch diterapkan.
+
 ## [2026-03-24] - Fase 1, 2, 3, & 4 Completed
 - **Smart Routing**: Berhasil mengimplementasikan auto-fallback OpenRouter & auto-budget SumoPod.
 - **Autonomous Terminal**: Menambahkan pendeteksi error terminal (exit code != 0) yang memicu auto-fix otonom via AI Composer.
