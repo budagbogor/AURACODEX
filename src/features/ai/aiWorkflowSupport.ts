@@ -4,6 +4,19 @@ import type { AiActivityEntry } from '@/features/workspace/workspaceSupport';
 export const isLikelyCodingPrompt = (prompt: string) =>
   /(buat|bikin|generate|create|refactor|fix|perbaiki|ubah|edit|implement|scaffold|bangun|coding|code|file|component|api|ui|ux)/i.test(prompt);
 
+export const isIterativeRevisionPrompt = (
+  prompt: string,
+  options?: {
+    hasActiveFile?: boolean;
+    workspaceFileCount?: number;
+  }
+) => {
+  const revisionSignal = /(revisi|revise|revision|ubah|edit|adjust|tweak|polish|refine|lanjutkan|continue|improve|improvement|kembangkan|develop|tambahkan|update|rapikan|extend|modif)/i.test(prompt);
+  const existingProjectSignal = (options?.hasActiveFile || false) || (options?.workspaceFileCount || 0) > 4;
+  const freshGenerationSignal = /(buat dari nol|from scratch|generate project|create project|new project|project baru|landing page baru|website baru|aplikasi baru)/i.test(prompt);
+  return revisionSignal && existingProjectSignal && !freshGenerationSignal;
+};
+
 export const isErrorFixPrompt = (prompt: string, attachments: AttachedFile[] = []) => {
   const hasImageAttachment = attachments.some((file) => file.type.startsWith('image/'));
   return (
@@ -70,6 +83,24 @@ const buildErrorFixContract = () => [
   '- Jika error menunjukkan import path, module missing, undefined symbol, atau build failure, perbaiki penyebab langsungnya sebelum polish lain.',
   '- Jika bukti belum cukup, lakukan asumsi paling masuk akal dan tulis patch yang paling kecil.',
   '- Output tetap harus mengikuti Workspace Output Contract agar AURA bisa langsung menerapkan file.'
+].join('\n');
+
+const buildRevisionSafetyContract = ({
+  activeFilePath,
+  preferredTargets
+}: {
+  activeFilePath?: string | null;
+  preferredTargets: string[];
+}) => [
+  'Advanced Revision Contract:',
+  '- Anda sedang mengembangkan project yang SUDAH ADA, bukan membuat ulang project dari nol.',
+  '- Prioritaskan edit inkremental pada file yang sudah ada dan pertahankan arsitektur yang sudah berjalan.',
+  '- Jangan mengganti entrypoint, config, package manifest, atau styling foundation kecuali prompt benar-benar membutuhkan itu.',
+  activeFilePath ? `- File fokus aktif saat ini: ${activeFilePath}` : '- Tidak ada file fokus aktif; gunakan target workspace yang disarankan.',
+  preferredTargets.length > 0 ? `- Batasi perubahan utama ke area ini lebih dulu:\n${preferredTargets.map((target) => `  - ${target}`).join('\n')}` : '- Batasi perubahan utama ke area kerja yang paling relevan.',
+  '- Jika revisi bisa diselesaikan dengan mengubah 1-3 file, jangan menyebarkan perubahan ke banyak file tambahan.',
+  '- Jangan menduplikasi scaffold seperti App shell, main entry, Tailwind base, atau config yang sudah ada.',
+  '- Jika harus menyentuh file sensitif seperti package.json, vite.config, src/index.css, src/main.tsx, atau src-tauri/tauri.conf.json, lakukan hanya bila benar-benar perlu untuk memenuhi revisi.'
 ].join('\n');
 
 export const buildWorkspaceOutputContract = () => [
@@ -306,7 +337,9 @@ export const buildAiPromptEnvelope = ({
   executionPlan,
   attachmentContext,
   prompt,
-  prioritizeFastFix = false
+  prioritizeFastFix = false,
+  revisionMode = false,
+  activeFilePath = ''
 }: {
   developerContext: string;
   projectRulesContext?: string;
@@ -316,20 +349,25 @@ export const buildAiPromptEnvelope = ({
   attachmentContext: string;
   prompt: string;
   prioritizeFastFix?: boolean;
+  revisionMode?: boolean;
+  activeFilePath?: string;
 }) => {
   const domainContext = `Active Work Domains: ${domains.join(', ')}`;
   const targetContext = preferredTargets.length > 0
     ? `Preferred Workspace Targets:\n${preferredTargets.map((target) => `- ${target}`).join('\n')}`
     : 'Preferred Workspace Targets:\n- workspace root';
   const planContext = `Suggested Execution Plan:\n${executionPlan.map((step, index) => `${index + 1}. ${step}`).join('\n')}`;
+  const focusContext = activeFilePath ? `Active File Focus: ${activeFilePath}` : '';
 
   return [
     developerContext,
     projectRulesContext || '',
     domainContext,
     targetContext,
+    focusContext,
     planContext,
     prioritizeFastFix ? buildErrorFixContract() : '',
+    !prioritizeFastFix && revisionMode ? buildRevisionSafetyContract({ activeFilePath, preferredTargets }) : '',
     !prioritizeFastFix && (domains.includes('frontend') || domains.includes('design-system') || domains.includes('mobile')) ? buildProfessionalUiContract() : '',
     !prioritizeFastFix && (domains.includes('frontend') || domains.includes('design-system') || domains.includes('mobile')) ? buildUiStyleDecisionContract() : '',
     !prioritizeFastFix && (domains.includes('frontend') || domains.includes('design-system') || domains.includes('mobile')) ? buildUiDesignSystemGenerationContract() : '',

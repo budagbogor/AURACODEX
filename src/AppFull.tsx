@@ -27,6 +27,7 @@ import {
   buildVerificationRecoveryPrompt,
   buildUiReviewLoopPrompt,
   isErrorFixPrompt,
+  isIterativeRevisionPrompt,
   isLikelyCodingPrompt,
   trimChatHistoryForAi,
   shouldRunUiReviewLoop
@@ -108,6 +109,48 @@ const MonacoEditor = lazy(() => import('@monaco-editor/react'));
 const MonacoDiffEditor = lazy(() => import('@monaco-editor/react').then((module) => ({ default: module.DiffEditor })));
 
 const GITHUB_REPO_URL_PATTERN = /https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\.git)?(?:\/)?/i;
+const REVISION_SENSITIVE_PATH_PATTERN = /^(?:package(?:-lock)?\.json|vite\.config\.(?:ts|js|mjs|cjs)|postcss\.config\.(?:js|mjs|cjs)|tailwind\.config\.(?:js|ts|mjs|cjs)|tsconfig(?:\.[^.]+)?\.json|src\/main\.tsx|src\/index\.css|src-tauri\/tauri\.conf\.json|src-tauri\/Cargo\.toml)$/i;
+
+const tightenPreferredTargetsForRevision = (
+  preferredTargets: string[],
+  activeFile: FileItem | null,
+  rootPath: string | null
+) => {
+  const next = new Set<string>();
+  const activeRelativePath = activeFile?.path ? getRelativeFilePath(activeFile.path, rootPath) : '';
+  const activeParent = activeRelativePath.split('/').slice(0, -1).join('/');
+  const activeGrandParent = activeRelativePath.split('/').slice(0, -2).join('/');
+
+  if (activeParent) next.add(activeParent);
+  if (activeGrandParent && activeGrandParent !== activeParent) next.add(activeGrandParent);
+  preferredTargets.forEach((target) => {
+    if (!target) return;
+    if (!activeParent || target === activeParent || target.startsWith(`${activeParent}/`) || activeParent.startsWith(`${target}/`)) {
+      next.add(target);
+    }
+  });
+  preferredTargets.slice(0, 2).forEach((target) => next.add(target));
+
+  return Array.from(next).filter(Boolean).slice(0, 4);
+};
+
+const detectHighRiskRevisionDrafts = (
+  generatedFiles: PreparedAiDraftBundle['generatedFiles'],
+  preferredTargets: string[],
+  activeFile: FileItem | null,
+  rootPath: string | null
+) => {
+  const activeRelativePath = activeFile?.path ? getRelativeFilePath(activeFile.path, rootPath) : '';
+  const activeParent = activeRelativePath.split('/').slice(0, -1).join('/');
+
+  return generatedFiles.filter((file) => {
+    const relativePath = normalizePath(file.relativePath);
+    const insidePreferredTarget = preferredTargets.some((target) => relativePath.startsWith(`${normalizePath(target)}/`) || relativePath === normalizePath(target));
+    const nearActiveFile = Boolean(activeParent) && (relativePath.startsWith(`${normalizePath(activeParent)}/`) || relativePath === normalizePath(activeRelativePath));
+    const sensitive = REVISION_SENSITIVE_PATH_PATTERN.test(relativePath);
+    return sensitive || (!insidePreferredTarget && !nearActiveFile);
+  });
+};
 
 type SumopodCatalogModel = {
   id: string;
@@ -2420,7 +2463,8 @@ export default function AppFull() {
     activityId?: string | null,
     domains: string[] = [],
     preferredTargets: string[] = [],
-    originalPrompt: string = ''
+    originalPrompt: string = '',
+    revisionMode = false
   ) => {
     const { generatedFiles, nextDrafts, suggestedCommands, readySteps } = draftBundle;
     if (generatedFiles.length === 0) return;
@@ -2440,7 +2484,19 @@ export default function AppFull() {
       terminal.appendTerminalOutput(
         `[AURA] AI menyiapkan ${generatedFiles.length} file: ${generatedFiles.map((item) => item.relativePath).join(', ')}`
       );
-      if (store.aiAutoApplyDrafts) {
+      const highRiskRevisionDrafts = revisionMode
+        ? detectHighRiskRevisionDrafts(generatedFiles, preferredTargets, activeFile, store.nativeProjectPath)
+        : [];
+      const shouldBlockAutoApplyForRevision =
+        revisionMode && (generatedFiles.length > 6 || highRiskRevisionDrafts.length > 0);
+
+      if (shouldBlockAutoApplyForRevision) {
+        terminal.appendTerminalOutput(
+          `[AURA] Revision safety aktif. Auto-apply ditahan karena perubahan menyentuh area sensitif atau terlalu luas: ${highRiskRevisionDrafts.map((item) => item.relativePath).join(', ') || `${generatedFiles.length} files`}`
+        );
+      }
+
+      if (store.aiAutoApplyDrafts && !shouldBlockAutoApplyForRevision) {
         terminal.appendTerminalOutput('[AURA] Auto-apply draft aktif. Menulis perubahan AI langsung ke workspace...');
         store.setStagingFiles((prev) =>
           prev.filter((item) => !nextDrafts.some((draft) => normalizePath(draft.path) === normalizePath(item.path)))
@@ -2532,7 +2588,7 @@ export default function AppFull() {
       } else {
         pushAiActivityEntry(createStandaloneDraftEntry(draftBundle, domains));
       }
-      if (store.aiAutoApplyDrafts) {
+      if (store.aiAutoApplyDrafts && !shouldBlockAutoApplyForRevision) {
         terminal.appendTerminalOutput('[AURA] Auto-apply draft aktif. Menulis perubahan AI langsung ke workspace...');
         for (const draft of nextDrafts) {
           appendAiActivityStep(activityId || '', {
@@ -2575,7 +2631,11 @@ export default function AppFull() {
         }
         setWorkspaceError(`AI langsung menerapkan ${generatedFiles.length} file ke workspace.`);
       } else {
-        setWorkspaceError(`AI membuat ${generatedFiles.length} draft file. Review dulu lalu Apply ke workspace.`);
+        setWorkspaceError(
+          shouldBlockAutoApplyForRevision
+            ? `AURA menahan auto-apply karena revisi menyentuh area sensitif atau terlalu luas. Review ${generatedFiles.length} draft file dulu sebelum Apply.`
+            : `AI membuat ${generatedFiles.length} draft file. Review dulu lalu Apply ke workspace.`
+        );
       }
     } catch (error: any) {
       terminal.appendTerminalOutput(`[AI DRAFT ERROR] ${error?.message || error}`);
@@ -2645,6 +2705,10 @@ export default function AppFull() {
     const workDomains = detectWorkDomains(prompt, activeFile, store.files);
     const uiFirstPrompt = isUiFirstPrompt(prompt);
     const mobileFirstPrompt = /(mobile|android|ios|apk|capacitor|native app|aplikasi mobile)/i.test(prompt);
+    const revisionMode = isIterativeRevisionPrompt(prompt, {
+      hasActiveFile: Boolean(activeFile),
+      workspaceFileCount: store.files.length
+    });
     const effectiveTaskPresetId = prioritizeFastFix && store.aiTaskPreset === 'fullstack'
       ? 'bug-fix'
       : mobileFirstPrompt && store.aiTaskPreset === 'fullstack'
@@ -2654,7 +2718,10 @@ export default function AppFull() {
         : store.aiTaskPreset;
     const effectiveTaskPreset = DEVELOPER_TASK_PRESETS.find((preset) => preset.id === effectiveTaskPresetId) || activeTaskPreset;
     const effectiveSkillName = effectiveTaskPreset.skillId || store.selectedSkill;
-    const preferredTargets = inferPreferredWorkspaceTargets(workDomains, store.files, store.nativeProjectPath, activeFile);
+    const inferredPreferredTargets = inferPreferredWorkspaceTargets(workDomains, store.files, store.nativeProjectPath, activeFile);
+    const preferredTargets = revisionMode
+      ? tightenPreferredTargetsForRevision(inferredPreferredTargets, activeFile, store.nativeProjectPath)
+      : inferredPreferredTargets;
     const executionPlan = inferExecutionPlan(workDomains, preferredTargets, prompt);
     const projectRulesContext = buildProjectRulesContext({
       files: store.files,
@@ -2709,7 +2776,9 @@ export default function AppFull() {
         executionPlan,
         attachmentContext,
         prompt,
-        prioritizeFastFix
+        prioritizeFastFix,
+        revisionMode,
+        activeFilePath: activeFile?.path || activeFile?.id || ''
       });
 
       if (activityId) {
@@ -2764,7 +2833,7 @@ export default function AppFull() {
         ...prev,
         { role: 'assistant', content: draftBundle.assistantChatContent }
       ]);
-      await applyAiResponseToWorkspace(draftBundle, activityId, workDomains, preferredTargets, prompt);
+      await applyAiResponseToWorkspace(draftBundle, activityId, workDomains, preferredTargets, prompt, revisionMode);
     } catch (error: any) {
       if (aiRunIdRef.current !== runId) {
         return;

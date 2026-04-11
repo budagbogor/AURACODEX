@@ -8,6 +8,13 @@ Log rekam jejak historis pengembangan fitur pada AURA AI IDE.
 - **Recovery Quality**: Jalur ekstraksi file AI kini lebih aman untuk kasus website/full app yang sebelumnya bisa menghasilkan Tailwind overlay error saat preview atau build.
 - **Verification**: Build AURA dan simulasi end-to-end generator website lulus setelah patch diterapkan.
 
+## [2026-04-11] - Advanced Chat Revision Safety (v15.3.160)
+- **Revision Intent Detection**: AURA sekarang membedakan prompt revisi bertahap dari prompt generasi proyek baru, sehingga mode chat lebih fokus pada pengembangan lanjutan project yang sudah ada.
+- **Active File Guidance**: Prompt ke model kini membawa konteks file aktif dan target workspace yang lebih sempit agar perubahan tidak melebar tanpa alasan.
+- **Sensitive File Protection**: Auto-apply draft akan ditahan saat revisi menyentuh file sensitif seperti config, entrypoint, styling inti, atau area Tauri yang berisiko memicu error lanjutan.
+- **Safer Iteration Loop**: Revisi yang terlalu luas kini diarahkan ke review draft terlebih dahulu sebelum diterapkan, mengurangi kerusakan saat user meminta banyak perubahan bertahap lewat chat.
+- **Verification**: Build produksi AURA lulus setelah hardening mode revisi diterapkan.
+
 ## [2026-03-24] - Fase 1, 2, 3, & 4 Completed
 - **Smart Routing**: Berhasil mengimplementasikan auto-fallback OpenRouter & auto-budget SumoPod.
 - **Autonomous Terminal**: Menambahkan pendeteksi error terminal (exit code != 0) yang memicu auto-fix otonom via AI Composer.
