@@ -1171,6 +1171,13 @@ const sanitizeGeneratedCodeContent = (content: string) => {
         .filter(Boolean)
         .map((className) => {
           switch (className.toLowerCase()) {
+            case 'btn':
+            case 'btn-primary':
+            case 'btn-secondary':
+            case 'btn-outline':
+            case 'btn-ghost':
+            case 'button':
+              return '';
             case 'text-dark':
               return 'text-slate-900';
             case 'bg-dark':
@@ -1231,9 +1238,10 @@ const sanitizeGeneratedCodeContent = (content: string) => {
             default:
               return className;
           }
-        });
+        })
+        .filter(Boolean);
 
-      return `@apply ${normalizedClasses.join(' ')};`;
+      return normalizedClasses.length > 0 ? `@apply ${normalizedClasses.join(' ')};` : '';
     });
 
   const trimmedContent = content.replace(/\s+$/, '');
