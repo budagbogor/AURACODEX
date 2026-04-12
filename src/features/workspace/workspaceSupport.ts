@@ -2174,6 +2174,126 @@ const resolveMissingRelativeModuleImport = (
   return importPath;
 };
 
+const resolveKnownRelativeModuleTarget = (
+  fromRelativePath: string,
+  importPath: string,
+  knownRelativePaths: Set<string>
+) => {
+  const resolvedTarget = resolveRelativeImportTarget(fromRelativePath, importPath);
+  const normalizedResolved = normalizePath(resolvedTarget);
+  const directCandidates = [
+    normalizedResolved,
+    `${normalizedResolved}.tsx`,
+    `${normalizedResolved}.ts`,
+    `${normalizedResolved}.jsx`,
+    `${normalizedResolved}.js`,
+    `${normalizedResolved}/index.tsx`,
+    `${normalizedResolved}/index.ts`,
+    `${normalizedResolved}/index.jsx`,
+    `${normalizedResolved}/index.js`
+  ];
+
+  const exactMatch = directCandidates.find((candidate) => knownRelativePaths.has(candidate));
+  if (exactMatch) {
+    return exactMatch;
+  }
+
+  const requestedBase = stripKnownScriptExtension(normalizedResolved).toLowerCase();
+  const baseName = requestedBase.split('/').pop() || '';
+  if (!baseName) return null;
+
+  const basenameMatches = Array.from(knownRelativePaths).filter((candidate) => {
+    const normalizedCandidate = stripKnownScriptExtension(normalizePath(candidate)).toLowerCase();
+    return normalizedCandidate.endsWith(`/${baseName}`) || normalizedCandidate === baseName;
+  });
+
+  if (basenameMatches.length === 1) {
+    return basenameMatches[0];
+  }
+
+  const currentDir = getFileDirectory(fromRelativePath).toLowerCase();
+  return (
+    basenameMatches.find((candidate) => {
+      const candidateDir = getFileDirectory(candidate).toLowerCase();
+      return currentDir && (candidateDir === currentDir || candidateDir.startsWith(`${currentDir}/`));
+    }) || null
+  );
+};
+
+const analyzeModuleExports = (content: string) => {
+  const namedExports = new Set<string>();
+  const hasDefaultExport = /\bexport\s+default\b/m.test(content);
+
+  Array.from(content.matchAll(/\bexport\s+(?:async\s+)?function\s+([A-Z][A-Za-z0-9_]*)/g)).forEach((match) => {
+    if (match[1]) namedExports.add(match[1]);
+  });
+  Array.from(content.matchAll(/\bexport\s+(?:const|let|var|class)\s+([A-Z][A-Za-z0-9_]*)/g)).forEach((match) => {
+    if (match[1]) namedExports.add(match[1]);
+  });
+  Array.from(content.matchAll(/\bexport\s*\{\s*([^}]+)\s*\}/g)).forEach((match) => {
+    const items = (match[1] || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    items.forEach((item) => {
+      const exportName = item.split(/\s+as\s+/i).pop()?.trim();
+      if (exportName && /^[A-Z][A-Za-z0-9_]*$/.test(exportName)) {
+        namedExports.add(exportName);
+      }
+    });
+  });
+
+  return {
+    hasDefaultExport,
+    namedExports
+  };
+};
+
+const normalizeRelativeImportExportShape = (
+  content: string,
+  fromRelativePath: string,
+  knownRelativePaths: Set<string>,
+  getModuleContent: (relativePath: string) => string | undefined
+) =>
+  content.replace(
+    /import\s+([^'"]+?)\s+from\s+["'](\.[^"']+)["'];?/g,
+    (fullMatch, specifier: string, importPath: string) => {
+      if (importPath.endsWith('.css')) {
+        return fullMatch;
+      }
+
+      const targetRelativePath = resolveKnownRelativeModuleTarget(fromRelativePath, importPath, knownRelativePaths);
+      if (!targetRelativePath) {
+        return fullMatch;
+      }
+
+      const targetContent = getModuleContent(targetRelativePath);
+      if (!targetContent) {
+        return fullMatch;
+      }
+
+      const moduleExports = analyzeModuleExports(targetContent);
+      const trimmedSpecifier = specifier.trim();
+      const namedOnlyMatch = trimmedSpecifier.match(/^\{\s*([A-Z][A-Za-z0-9_]*)\s*\}$/);
+      if (namedOnlyMatch) {
+        const importedName = namedOnlyMatch[1];
+        if (!moduleExports.namedExports.has(importedName) && moduleExports.hasDefaultExport) {
+          return `import ${importedName} from '${importPath}';`;
+        }
+      }
+
+      const defaultOnlyMatch = trimmedSpecifier.match(/^([A-Z][A-Za-z0-9_]*)$/);
+      if (defaultOnlyMatch) {
+        const importedName = defaultOnlyMatch[1];
+        if (!moduleExports.hasDefaultExport && moduleExports.namedExports.has(importedName)) {
+          return `import { ${importedName} } from '${importPath}';`;
+        }
+      }
+
+      return fullMatch;
+    }
+  );
+
 const buildComponentStubFromImport = (statement: string) => {
   const importMatch = statement.match(/import\s+(.+?)\s+from\s+["'][^"']+["']/);
   if (!importMatch) return '';
@@ -2373,6 +2493,17 @@ export const normalizeGeneratedFrontendFiles = (
         );
         return `${prefix}${normalizedImport}${suffix}`;
       }
+    );
+
+    const getModuleContent = (relativePath: string) =>
+      relocatedFiles.find((file) => normalizePath(file.relativePath) === normalizePath(relativePath))?.content
+      || workspaceFiles.find((file) => normalizePath(getRelativeFilePath(file.path || file.id, normalizedRoot)) === normalizePath(relativePath))?.content;
+
+    nextContent = normalizeRelativeImportExportShape(
+      nextContent,
+      generatedFile.relativePath,
+      knownRelativePaths,
+      getModuleContent
     );
 
     return nextContent === generatedFile.content
