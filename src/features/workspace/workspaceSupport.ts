@@ -1164,6 +1164,66 @@ const normalizeGeneratedRelativePath = (relativePath: string) => {
 };
 
 const sanitizeGeneratedCodeContent = (content: string) => {
+  const normalizeTailwindApplyAliases = (value: string) =>
+    value.replace(/@apply\s+([^;]+);/gi, (_match, classes: string) => {
+      const normalizedClasses = classes
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((className) => {
+          switch (className.toLowerCase()) {
+            case 'bg-background':
+              return 'bg-slate-950';
+            case 'text-foreground':
+              return 'text-slate-50';
+            case 'bg-surface':
+            case 'bg-card':
+            case 'bg-popover':
+              return 'bg-slate-900';
+            case 'text-surface':
+              return 'text-slate-900';
+            case 'text-surface-foreground':
+            case 'text-card-foreground':
+            case 'text-popover-foreground':
+              return 'text-slate-50';
+            case 'border-surface':
+              return 'border-slate-800';
+            case 'bg-primary':
+              return 'bg-blue-600';
+            case 'text-primary':
+              return 'text-blue-400';
+            case 'text-primary-foreground':
+              return 'text-blue-50';
+            case 'bg-secondary':
+              return 'bg-slate-200';
+            case 'text-secondary':
+              return 'text-slate-200';
+            case 'text-secondary-foreground':
+              return 'text-slate-900';
+            case 'bg-muted':
+              return 'bg-slate-800';
+            case 'text-muted':
+              return 'text-slate-300';
+            case 'text-muted-foreground':
+              return 'text-slate-400';
+            case 'bg-accent':
+              return 'bg-blue-700';
+            case 'text-accent':
+              return 'text-blue-300';
+            case 'text-accent-foreground':
+              return 'text-blue-50';
+            case 'border-border':
+            case 'border-input':
+              return 'border-slate-300';
+            case 'ring-ring':
+              return 'ring-blue-400';
+            default:
+              return className;
+          }
+        });
+
+      return `@apply ${normalizedClasses.join(' ')};`;
+    });
+
   const trimmedContent = content.replace(/\s+$/, '');
   if (!trimmedContent.trim()) return trimmedContent;
 
@@ -1185,7 +1245,7 @@ const sanitizeGeneratedCodeContent = (content: string) => {
     lines.some((line) => /^[+-](import|export|const |let |var |function |class |type |interface )/.test(line.trim()));
 
   if (!shouldStripPatchArtifacts) {
-    return trimmedContent;
+    return normalizeTailwindApplyAliases(trimmedContent);
   }
 
   const sanitizedLines = lines
@@ -1210,7 +1270,9 @@ const sanitizeGeneratedCodeContent = (content: string) => {
       return line;
     });
 
-  return sanitizedLines.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '');
+  return normalizeTailwindApplyAliases(
+    sanitizedLines.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '')
+  );
 };
 
 const toPascalCase = (value: string) =>

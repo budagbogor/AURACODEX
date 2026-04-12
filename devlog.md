@@ -8,6 +8,12 @@ Log rekam jejak historis pengembangan fitur pada AURA AI IDE.
 - **Recovery Quality**: Jalur ekstraksi file AI kini lebih aman untuk kasus website/full app yang sebelumnya bisa menghasilkan Tailwind overlay error saat preview atau build.
 - **Verification**: Build AURA dan simulasi end-to-end generator website lulus setelah patch diterapkan.
 
+## [2026-04-12] - Tailwind Alias Recovery For Website Generation (v15.3.161)
+- **Alias Sanitization**: AURA sekarang menormalkan utility alias yang rawan gagal di blok `@apply`, terutama `bg-surface`, `bg-card`, `bg-popover`, dan pasangan foreground-nya, menjadi utility Tailwind bawaan yang valid.
+- **HTML Style Recovery**: Sanitasi ini juga melindungi style block yang muncul di `index.html`, sehingga error `Cannot apply unknown utility class` tidak lagi lolos saat website baru dibangun dari prompt.
+- **Prompt Guardrails**: Instruksi generator dipertegas agar model tidak lagi memakai alias design-token tersebut pada CSS `@apply` atau `<style>` inline.
+- **Verification**: Build produksi AURA lulus setelah patch diterapkan.
+
 ## [2026-04-11] - Advanced Chat Revision Safety (v15.3.160)
 - **Revision Intent Detection**: AURA sekarang membedakan prompt revisi bertahap dari prompt generasi proyek baru, sehingga mode chat lebih fokus pada pengembangan lanjutan project yang sudah ada.
 - **Active File Guidance**: Prompt ke model kini membawa konteks file aktif dan target workspace yang lebih sempit agar perubahan tidak melebar tanpa alasan.

@@ -45,6 +45,7 @@ STRICT RULES:
 - [SANGAT FATAL] Anda WAJIB membuat file \`src/index.css\` yang HANYA berisi: \`@import "tailwindcss";\` (ditambah custom css jika perlu) dan memastikan file ini di-import di \`src/main.tsx\`.
 - [SANGAT FATAL] Anda WAJIB mengkonfigurasi \`vite.config.ts\` untuk menggunakan \`@tailwindcss/vite\` (bersama plugin react). Contoh plugins: \`[react(), tailwindcss()]\`. Jika ini terlewat, Vite gagal atau UI polos!
 - [SANGAT FATAL] Jangan gunakan utility alias fiktif seperti \`text-text\`, \`bg-text\`, \`border-bg\`, atau token lain yang tidak benar-benar didefinisikan. Untuk teks utama gunakan \`text-foreground\` atau utility Tailwind bawaan seperti \`text-slate-100\`.
+- [SANGAT FATAL] Di blok CSS \`@apply\` atau \`<style>\` pada \`index.html\`, jangan gunakan alias design-token seperti \`bg-surface\`, \`text-surface-foreground\`, \`bg-card\`, atau \`bg-popover\`. Gunakan utility Tailwind bawaan yang nyata seperti \`bg-slate-900\`, \`text-slate-50\`, \`border-slate-800\`, \`bg-blue-600\`.
 - [SANGAT FATAL] Jangan menduplikasi \`@layer base\`, \`@theme\`, atau \`@keyframes\` yang sama di \`src/index.css\`. Jika base layer sudah ada, cukup tambahkan komponen/utility/custom CSS yang belum ada.
 - Desain: Glassmorphism, Bento Grids, Dynamic Gradients, dan Smooth Animations (Framer Motion).
 - Jika output Anda terhenti karena limit token, katakan "LANJUTKAN [nama file]" di pesan berikutnya.
