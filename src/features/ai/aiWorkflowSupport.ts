@@ -101,6 +101,7 @@ const buildRevisionSafetyContract = ({
   '- Jika revisi bisa diselesaikan dengan mengubah 1-3 file, jangan menyebarkan perubahan ke banyak file tambahan.',
   '- Jangan menduplikasi scaffold seperti App shell, main entry, Tailwind base, atau config yang sudah ada.',
   '- Untuk CSS @apply atau <style> di index.html, pakai utility Tailwind bawaan yang valid seperti bg-slate-900, text-slate-50, dan border-slate-800; hindari alias seperti bg-surface atau bg-card.',
+  '- Hindari alias warna generik yang tidak ada di Tailwind seperti text-dark, bg-dark, text-light, bg-light, border-dark, atau border-light.',
   '- Jika harus menyentuh file sensitif seperti package.json, vite.config, src/index.css, src/main.tsx, atau src-tauri/tauri.conf.json, lakukan hanya bila benar-benar perlu untuk memenuhi revisi.'
 ].join('\n');
 

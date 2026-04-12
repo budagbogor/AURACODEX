@@ -8,6 +8,12 @@ Log rekam jejak historis pengembangan fitur pada AURA AI IDE.
 - **Recovery Quality**: Jalur ekstraksi file AI kini lebih aman untuk kasus website/full app yang sebelumnya bisa menghasilkan Tailwind overlay error saat preview atau build.
 - **Verification**: Build AURA dan simulasi end-to-end generator website lulus setelah patch diterapkan.
 
+## [2026-04-12] - Tailwind Dark/Light Alias Recovery (v15.3.163)
+- **Alias Recovery**: AURA sekarang menormalkan utility alias invalid seperti `text-dark`, `bg-dark`, `text-light`, `bg-light`, `border-dark`, dan `border-light` menjadi utility Tailwind bawaan yang valid.
+- **Website Build Protection**: Sanitasi ini melindungi `src/index.css` dan blok CSS hasil generate agar error `Cannot apply unknown utility class` tidak lagi lolos ke browser preview.
+- **Prompt Guardrails**: Instruksi generator dipertegas agar model tidak lagi menulis alias `dark/light` yang tidak ada di Tailwind.
+- **Verification**: Build produksi AURA lulus setelah patch diterapkan.
+
 ## [2026-04-12] - Mobile Import/Export Recovery (v15.3.162)
 - **Import Shape Recovery**: AURA sekarang menormalisasi import relatif ketika file pemanggil memakai named import seperti `{ CartPage }` tetapi file target hanya mengekspor `default`.
 - **White Screen Prevention**: Recovery ini mencegah crash runtime seperti `does not provide an export named 'CartPage'` yang sebelumnya membuat mobile app hasil generate hanya menampilkan white screen.

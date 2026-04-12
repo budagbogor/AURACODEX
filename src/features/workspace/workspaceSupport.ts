@@ -1171,6 +1171,18 @@ const sanitizeGeneratedCodeContent = (content: string) => {
         .filter(Boolean)
         .map((className) => {
           switch (className.toLowerCase()) {
+            case 'text-dark':
+              return 'text-slate-900';
+            case 'bg-dark':
+              return 'bg-slate-900';
+            case 'border-dark':
+              return 'border-slate-900';
+            case 'text-light':
+              return 'text-slate-50';
+            case 'bg-light':
+              return 'bg-slate-50';
+            case 'border-light':
+              return 'border-slate-100';
             case 'bg-background':
               return 'bg-slate-950';
             case 'text-foreground':
@@ -1689,6 +1701,12 @@ const ensureTailwindEntrypoints = (
         .replace(/@utility\s+[^{]+\{[^{}]*\}\s*/gi, '')
         .replace(/\btext-text\b/gi, 'text-foreground')
         .replace(/\bbg-text\b/gi, 'bg-foreground')
+        .replace(/\btext-dark\b/gi, 'text-slate-900')
+        .replace(/\bbg-dark\b/gi, 'bg-slate-900')
+        .replace(/\bborder-dark\b/gi, 'border-slate-900')
+        .replace(/\btext-light\b/gi, 'text-slate-50')
+        .replace(/\bbg-light\b/gi, 'bg-slate-50')
+        .replace(/\bborder-light\b/gi, 'border-slate-100')
         .replace(/@apply\s+border-border\s*;/gi, 'border-color: var(--color-border);')
         .replace(/@apply\s+bg-background\s*;/gi, 'background-color: var(--color-background);')
         .replace(/@apply\s+text-foreground\s*;/gi, 'color: var(--color-foreground);')
