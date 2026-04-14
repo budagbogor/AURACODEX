@@ -2,7 +2,7 @@ import type { AttachedFile } from '@/types';
 import type { AiActivityEntry } from '@/features/workspace/workspaceSupport';
 
 export const isLikelyCodingPrompt = (prompt: string) =>
-  /(buat|bikin|generate|create|refactor|fix|perbaiki|ubah|edit|implement|scaffold|bangun|coding|code|file|component|api|ui|ux)/i.test(prompt);
+  /(buat|bikin|generate|create|refactor|fix|perbaiki|ubah|edit|implement|scaffold|bangun|coding|code|file|component|api|ui|ux|hapus|delete|remove|rename|replace)/i.test(prompt);
 
 export const isIterativeRevisionPrompt = (
   prompt: string,
@@ -16,6 +16,9 @@ export const isIterativeRevisionPrompt = (
   const freshGenerationSignal = /(buat dari nol|from scratch|generate project|create project|new project|project baru|landing page baru|website baru|aplikasi baru)/i.test(prompt);
   return revisionSignal && existingProjectSignal && !freshGenerationSignal;
 };
+
+export const isDirectWorkspaceEditPrompt = (prompt: string) =>
+  /(edit|ubah|update|revisi|refactor|rapikan|improve|improve|polish|tambah|tambahkan|kurangi|hapus|delete|remove|rename|ganti|replace|perbaiki|fix|lanjutkan coding|sempurnakan)/i.test(prompt);
 
 export const isErrorFixPrompt = (prompt: string, attachments: AttachedFile[] = []) => {
   const hasImageAttachment = attachments.some((file) => file.type.startsWith('image/'));
@@ -105,9 +108,56 @@ const buildRevisionSafetyContract = ({
   '- Jika harus menyentuh file sensitif seperti package.json, vite.config, src/index.css, src/main.tsx, atau src-tauri/tauri.conf.json, lakukan hanya bila benar-benar perlu untuk memenuhi revisi.'
 ].join('\n');
 
+const buildDirectEditExecutionContract = ({
+  activeFilePath,
+  preferredTargets
+}: {
+  activeFilePath?: string | null;
+  preferredTargets: string[];
+}) => [
+  'Direct Workspace Edit Contract:',
+  '- User meminta AURA untuk BENAR-BENAR mengedit workspace saat ini, bukan sekadar memberi saran atau rencana.',
+  '- Jika permintaan menyangkut update, revisi, penambahan, pengurangan, penghapusan, atau penyempurnaan kode, Anda WAJIB mengembalikan perubahan file nyata.',
+  '- Prioritaskan file yang sudah ada di workspace. Jangan membuat ulang project jika revisi cukup diselesaikan dengan edit terarah.',
+  activeFilePath ? `- File fokus utama sekarang: ${activeFilePath}` : '- Tidak ada file fokus aktif; pilih file workspace yang paling relevan dan edit langsung.',
+  preferredTargets.length > 0 ? `- Area target yang diprioritaskan:\n${preferredTargets.map((target) => `  - ${target}`).join('\n')}` : '- Area target: file yang paling relevan di workspace saat ini.',
+  '- Jika perlu menghapus file, gunakan baris tunggal `Delete File: relative/path.ext`.',
+  '- Jika perlu membuat atau mengubah file, gunakan format `File: relative/path.ext` lalu fenced code block lengkap tepat di bawahnya.',
+  '- Jangan berhenti dengan prose seperti "berikut langkah", "rencana", atau "kode contoh" tanpa file perubahan.',
+  '- Jika revisi hanya butuh 1 file, keluarkan 1 file itu saja. Jika butuh 2-4 file, keluarkan hanya file yang benar-benar relevan.',
+  '- Jangan menjawab dengan placeholder seperti "bagian lain tetap sama". Setiap file yang diubah harus penuh dan siap ditulis.',
+  '- Bila user meminta menghapus fitur, bersihkan juga import, route, state, dan referensi terkait agar proyek tetap runnable.'
+].join('\n');
+
+export const buildFileOnlyRepairPrompt = ({
+  originalPrompt,
+  rawResponse,
+  activeFilePath = '',
+  preferredTargets
+}: {
+  originalPrompt: string;
+  rawResponse: string;
+  activeFilePath?: string;
+  preferredTargets: string[];
+}) => [
+  'Workspace Formatting Recovery:',
+  'Respons sebelumnya belum menghasilkan perubahan file yang bisa diterapkan otomatis.',
+  'Ubah keputusan teknis yang sudah Anda buat menjadi output workspace yang VALID dan siap ditulis.',
+  'Aturan wajib:',
+  '- Balas HANYA dengan section file. Jangan tulis penjelasan, heading, atau prose tambahan.',
+  '- Untuk create/modify gunakan `File: relative/path.ext` lalu code block lengkap.',
+  '- Untuk delete gunakan `Delete File: relative/path.ext` pada satu baris.',
+  '- Prioritaskan file existing di area target. Jangan membuat ulang project dari nol.',
+  activeFilePath ? `- File fokus: ${activeFilePath}` : '',
+  preferredTargets.length > 0 ? `- Target utama:\n${preferredTargets.map((target) => `  - ${target}`).join('\n')}` : '',
+  `User request asli:\n${originalPrompt}`,
+  `Respons sebelumnya yang harus dikonversi menjadi perubahan file:\n${rawResponse}`
+].filter(Boolean).join('\n\n');
+
 export const buildWorkspaceOutputContract = () => [
   'Workspace Output Contract:',
   '- Jika kamu mengubah kode, keluarkan satu section per file dengan format wajib `File: relative/path.ext` lalu fenced code block tepat di bawahnya.',
+  '- Jika kamu perlu menghapus file, gunakan satu baris `Delete File: relative/path.ext`.',
   '- Jangan gabungkan beberapa file dalam satu code block.',
   '- Jangan tulis prose di antara baris `File:` dan fenced code block file itu.',
   '- Selalu sertakan path file yang jelas, misalnya File: src/App.tsx atau path=src/App.tsx.',
@@ -343,7 +393,8 @@ export const buildAiPromptEnvelope = ({
   prompt,
   prioritizeFastFix = false,
   revisionMode = false,
-  activeFilePath = ''
+  activeFilePath = '',
+  directEditMode = false
 }: {
   developerContext: string;
   projectRulesContext?: string;
@@ -355,6 +406,7 @@ export const buildAiPromptEnvelope = ({
   prioritizeFastFix?: boolean;
   revisionMode?: boolean;
   activeFilePath?: string;
+  directEditMode?: boolean;
 }) => {
   const domainContext = `Active Work Domains: ${domains.join(', ')}`;
   const targetContext = preferredTargets.length > 0
@@ -369,10 +421,11 @@ export const buildAiPromptEnvelope = ({
     domainContext,
     targetContext,
     focusContext,
-    planContext,
-    prioritizeFastFix ? buildErrorFixContract() : '',
-    !prioritizeFastFix && revisionMode ? buildRevisionSafetyContract({ activeFilePath, preferredTargets }) : '',
-    !prioritizeFastFix && (domains.includes('frontend') || domains.includes('design-system') || domains.includes('mobile')) ? buildProfessionalUiContract() : '',
+      planContext,
+      prioritizeFastFix ? buildErrorFixContract() : '',
+      !prioritizeFastFix && revisionMode ? buildRevisionSafetyContract({ activeFilePath, preferredTargets }) : '',
+      !prioritizeFastFix && (revisionMode || directEditMode) ? buildDirectEditExecutionContract({ activeFilePath, preferredTargets }) : '',
+      !prioritizeFastFix && (domains.includes('frontend') || domains.includes('design-system') || domains.includes('mobile')) ? buildProfessionalUiContract() : '',
     !prioritizeFastFix && (domains.includes('frontend') || domains.includes('design-system') || domains.includes('mobile')) ? buildUiStyleDecisionContract() : '',
     !prioritizeFastFix && (domains.includes('frontend') || domains.includes('design-system') || domains.includes('mobile')) ? buildUiDesignSystemGenerationContract() : '',
     !prioritizeFastFix && (domains.includes('frontend') || domains.includes('design-system') || domains.includes('mobile')) ? buildUiAntiPatternGate() : '',

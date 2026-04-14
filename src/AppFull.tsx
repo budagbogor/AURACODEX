@@ -23,10 +23,12 @@ import { capturePreviewSnapshot, capturePreviewScreenshot, type PreviewScreensho
 import {
   buildAiPromptEnvelope,
   buildAttachmentPromptContext,
+  buildFileOnlyRepairPrompt,
   buildStarterReplacementPrompt,
   buildVerificationRecoveryPrompt,
   buildUiReviewLoopPrompt,
   isErrorFixPrompt,
+  isDirectWorkspaceEditPrompt,
   isIterativeRevisionPrompt,
   isLikelyCodingPrompt,
   trimChatHistoryForAi,
@@ -800,6 +802,33 @@ export default function AppFull() {
       puterModel: store.puterModel
     });
 
+  const repairNoDraftCodingResponse = async ({
+    originalPrompt,
+    rawResponse,
+    preferredTargets
+  }: {
+    originalPrompt: string;
+    rawResponse: string;
+    preferredTargets: string[];
+  }) => {
+    const repairPrompt = buildFileOnlyRepairPrompt({
+      originalPrompt,
+      rawResponse,
+      activeFilePath: activeFile?.path || activeFile?.id || '',
+      preferredTargets
+    });
+
+    const repairedResponseText = await generateCurrentProviderResponse(repairPrompt);
+    return prepareAiDraftBundle({
+      responseText: repairedResponseText,
+      activeFile,
+      nativeProjectPath: store.nativeProjectPath,
+      preferredTargets,
+      files: useAppStore.getState().files,
+      domains: detectWorkDomains(originalPrompt, activeFile, useAppStore.getState().files)
+    });
+  };
+
   const collectVerificationRecoveryFiles = (preferredTargets: string[]) => {
     const normalizedTargets = preferredTargets.map((target) => normalizePath(target).replace(/^\/+/, ''));
     const candidateFiles = [...store.files]
@@ -1112,8 +1141,9 @@ export default function AppFull() {
         type: 'image/png',
         data: previewScreenshot.dataUrl
       }] : [];
+      const previewLooksBlank = Boolean(previewScreenshot?.visuallyBlank);
 
-      if (snapshot.shellOnly) {
+      if (snapshot.shellOnly && !previewLooksBlank) {
         appendAiActivityStep(activityId, {
           label: 'Preview Review',
           detail: snapshot.summary,
@@ -1125,10 +1155,12 @@ export default function AppFull() {
         return;
       }
 
-      if (snapshot.starterTemplate) {
+      if (snapshot.starterTemplate || previewLooksBlank) {
         appendAiActivityStep(activityId, {
           label: 'Preview Review',
-          detail: snapshot.summary,
+          detail: previewLooksBlank
+            ? 'Preview screenshot terbaca kosong/nyaris kosong. Quality gate memaksa penggantian layar utama.'
+            : snapshot.summary,
           status: 'error'
         });
 
@@ -1143,7 +1175,7 @@ export default function AppFull() {
             domains: context.domains
           }),
           generatedFiles: collectPreviewReviewFiles(context.preferredTargets),
-          previewSnapshotContext: snapshot.promptContext
+          previewSnapshotContext: `${snapshot.promptContext}\n\nBlank runtime screenshot detected: ${previewLooksBlank ? 'yes' : 'no'}`
         });
 
         const responseText = await generateAiProviderResponse({
@@ -2464,7 +2496,8 @@ export default function AppFull() {
     domains: string[] = [],
     preferredTargets: string[] = [],
     originalPrompt: string = '',
-    revisionMode = false
+    revisionMode = false,
+    directEditMode = false
   ) => {
     const { generatedFiles, nextDrafts, suggestedCommands, readySteps } = draftBundle;
     if (generatedFiles.length === 0) return;
@@ -2487,8 +2520,15 @@ export default function AppFull() {
       const highRiskRevisionDrafts = revisionMode
         ? detectHighRiskRevisionDrafts(generatedFiles, preferredTargets, activeFile, store.nativeProjectPath)
         : [];
+      const focusedDirectEditRevision =
+        revisionMode &&
+        directEditMode &&
+        highRiskRevisionDrafts.length === 0 &&
+        generatedFiles.length <= 10;
       const shouldBlockAutoApplyForRevision =
-        revisionMode && (generatedFiles.length > 6 || highRiskRevisionDrafts.length > 0);
+        revisionMode &&
+        !focusedDirectEditRevision &&
+        (generatedFiles.length > 6 || highRiskRevisionDrafts.length > 0);
 
       if (shouldBlockAutoApplyForRevision) {
         terminal.appendTerminalOutput(
@@ -2512,8 +2552,12 @@ export default function AppFull() {
           }
 
           await applyResolvedDraft(draft);
-          upsertWorkspaceFile(draft.path, draft.newContent);
-          openCenterFile(draft.path);
+          if (draft.action === 'delete') {
+            store.setFiles((prev) => removeWorkspaceFileFromList(prev, draft.path));
+          } else {
+            upsertWorkspaceFile(draft.path, draft.newContent);
+            openCenterFile(draft.path);
+          }
 
           if (activityId) {
             appendAiActivityStep(activityId, {
@@ -2526,7 +2570,10 @@ export default function AppFull() {
 
         const loadedFiles = await refreshWorkspaceFromDisk();
         generatedFiles.forEach((generatedFile) => {
-          if (loadedFiles.some((file) => normalizePath(file.id) === normalizePath(generatedFile.absolutePath))) {
+          if (
+            generatedFile.action !== 'delete' &&
+            loadedFiles.some((file) => normalizePath(file.id) === normalizePath(generatedFile.absolutePath))
+          ) {
             openCenterFile(generatedFile.absolutePath);
           }
         });
@@ -2576,10 +2623,15 @@ export default function AppFull() {
       }
 
       generatedFiles.forEach((generatedFile) => {
+        if (generatedFile.action === 'delete') {
+          store.setFiles((prev) => removeWorkspaceFileFromList(prev, generatedFile.absolutePath));
+          return;
+        }
         upsertWorkspaceFile(generatedFile.absolutePath, generatedFile.content);
       });
       store.setStagingFiles((prev) => mergePendingDrafts(prev, nextDrafts));
       generatedFiles.forEach((generatedFile) => {
+        if (generatedFile.action === 'delete') return;
         openCenterFile(generatedFile.absolutePath);
       });
       setWorkspaceFolders((prev) => Array.from(new Set([...prev, ...generatedFolders])));
@@ -2705,10 +2757,11 @@ export default function AppFull() {
     const workDomains = detectWorkDomains(prompt, activeFile, store.files);
     const uiFirstPrompt = isUiFirstPrompt(prompt);
     const mobileFirstPrompt = /(mobile|android|ios|apk|capacitor|native app|aplikasi mobile)/i.test(prompt);
+    const directEditMode = isDirectWorkspaceEditPrompt(prompt);
     const revisionMode = isIterativeRevisionPrompt(prompt, {
       hasActiveFile: Boolean(activeFile),
       workspaceFileCount: store.files.length
-    });
+    }) || (directEditMode && (Boolean(activeFile) || store.files.length > 4));
     const effectiveTaskPresetId = prioritizeFastFix && store.aiTaskPreset === 'fullstack'
       ? 'bug-fix'
       : mobileFirstPrompt && store.aiTaskPreset === 'fullstack'
@@ -2778,7 +2831,8 @@ export default function AppFull() {
         prompt,
         prioritizeFastFix,
         revisionMode,
-        activeFilePath: activeFile?.path || activeFile?.id || ''
+        activeFilePath: activeFile?.path || activeFile?.id || '',
+        directEditMode
       });
 
       if (activityId) {
@@ -2812,7 +2866,7 @@ export default function AppFull() {
         return;
       }
 
-      const draftBundle = prepareAiDraftBundle({
+      let draftBundle = prepareAiDraftBundle({
         responseText,
         activeFile,
         nativeProjectPath: store.nativeProjectPath,
@@ -2820,6 +2874,40 @@ export default function AppFull() {
         files: store.files,
         domains: workDomains
       });
+
+      if (isLikelyCodingRequest && draftBundle.generatedFiles.length === 0) {
+        terminal.appendTerminalOutput('[AURA] Respons AI belum menghasilkan file draft. Menjalankan formatter recovery agar perubahan benar-benar masuk ke workspace...');
+        if (activityId) {
+          appendAiActivityStep(activityId, {
+            label: 'Workspace Recovery',
+            detail: 'Mengonversi respons AI menjadi file changes yang bisa diterapkan.',
+            status: 'working'
+          });
+        }
+
+        const repairedDraftBundle = await repairNoDraftCodingResponse({
+          originalPrompt: prompt,
+          rawResponse: responseText,
+          preferredTargets
+        });
+
+        if (repairedDraftBundle.generatedFiles.length > 0) {
+          draftBundle = repairedDraftBundle;
+          if (activityId) {
+            appendAiActivityStep(activityId, {
+              label: 'Workspace Recovery',
+              detail: `Recovery berhasil menghasilkan ${repairedDraftBundle.generatedFiles.length} file change.`,
+              status: 'done'
+            });
+          }
+        } else if (activityId) {
+          appendAiActivityStep(activityId, {
+            label: 'Workspace Recovery',
+            detail: 'Recovery formatter tidak menemukan perubahan file yang bisa diterapkan.',
+            status: 'error'
+          });
+        }
+      }
 
       if (activityId && draftBundle.generatedFiles.length === 0) {
         updateAiActivity(activityId, createNoDraftActivityUpdate(workDomains));
@@ -2833,7 +2921,7 @@ export default function AppFull() {
         ...prev,
         { role: 'assistant', content: draftBundle.assistantChatContent }
       ]);
-      await applyAiResponseToWorkspace(draftBundle, activityId, workDomains, preferredTargets, prompt, revisionMode);
+      await applyAiResponseToWorkspace(draftBundle, activityId, workDomains, preferredTargets, prompt, revisionMode, directEditMode);
     } catch (error: any) {
       if (aiRunIdRef.current !== runId) {
         return;

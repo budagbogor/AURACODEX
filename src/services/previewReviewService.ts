@@ -23,6 +23,7 @@ export type PreviewSnapshot = {
 export type PreviewScreenshot = {
   path: string;
   dataUrl: string;
+  visuallyBlank: boolean;
 };
 
 const fetchPreviewHtml = async (url: string) => {
@@ -151,15 +152,73 @@ const bytesToDataUrl = (bytes: Uint8Array, mimeType: string) => {
   return `data:${mimeType};base64,${btoa(binary)}`;
 };
 
+const analyzeScreenshotVisualBlankness = async (dataUrl: string) => {
+  if (typeof window === 'undefined') return false;
+
+  return new Promise<boolean>((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const width = Math.max(1, Math.min(160, image.naturalWidth || image.width || 1));
+        const height = Math.max(1, Math.min(160, image.naturalHeight || image.height || 1));
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext('2d');
+        if (!context) {
+          resolve(false);
+          return;
+        }
+
+        context.drawImage(image, 0, 0, width, height);
+        const { data } = context.getImageData(0, 0, width, height);
+
+        let lightPixels = 0;
+        let darkPixels = 0;
+        let totalPixels = 0;
+
+        for (let index = 0; index < data.length; index += 16) {
+          const red = data[index];
+          const green = data[index + 1];
+          const blue = data[index + 2];
+          const alpha = data[index + 3];
+          if (alpha < 8) continue;
+
+          totalPixels += 1;
+          const luminance = (red + green + blue) / 3;
+          if (luminance >= 245) lightPixels += 1;
+          if (luminance <= 10) darkPixels += 1;
+        }
+
+        if (totalPixels === 0) {
+          resolve(false);
+          return;
+        }
+
+        const lightRatio = lightPixels / totalPixels;
+        const darkRatio = darkPixels / totalPixels;
+        resolve(lightRatio >= 0.94 || darkRatio >= 0.94);
+      } catch {
+        resolve(false);
+      }
+    };
+    image.onerror = () => resolve(false);
+    image.src = dataUrl;
+  });
+};
+
 export const capturePreviewScreenshot = async (url: string): Promise<PreviewScreenshot | null> => {
   if (!isTauriDesktop) return null;
 
   const path = await invoke<string>('capture_preview_screenshot', { url });
   const bytes = await readFile(path);
   const dataUrl = bytesToDataUrl(bytes, 'image/png');
+  const visuallyBlank = await analyzeScreenshotVisualBlankness(dataUrl);
 
   return {
     path,
-    dataUrl
+    dataUrl,
+    visuallyBlank
   };
 };

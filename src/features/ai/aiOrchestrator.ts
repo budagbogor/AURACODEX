@@ -143,7 +143,7 @@ export const prepareAiDraftBundle = ({
       originalContent: existing?.content || '',
       existedBefore: Boolean(existing),
       newContent: generatedFile.content,
-      action: 'create_or_modify' as const,
+      action: generatedFile.action,
       status: 'pending' as const
     };
   });

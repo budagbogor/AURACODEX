@@ -67,6 +67,7 @@ export type AiGeneratedFile = {
   name: string;
   content: string;
   language: string;
+  action: 'create_or_modify' | 'delete';
 };
 
 export type HeaderMenuKey = 'file' | 'edit' | 'view' | 'terminal' | 'git' | 'ai' | 'help';
@@ -2558,6 +2559,7 @@ export const extractAiGeneratedFiles = (
   files: FileItem[] = []
 ): AiGeneratedFile[] => {
   const codeFenceRegex = /```([^\n`]*)\n([\s\S]*?)```/g;
+  const deleteDirectiveRegex = /^(?:Delete|Remove|Hapus)\s+File\s*:\s*([^\r\n]+)$/gim;
   const found = new Map<string, AiGeneratedFile>();
   const normalizedRoot = rootPath ? normalizePath(rootPath) : '';
   const matches = Array.from(responseText.matchAll(codeFenceRegex));
@@ -2578,7 +2580,23 @@ export const extractAiGeneratedFiles = (
       relativePath: normalizedRoot ? getRelativeFilePath(absolutePath, normalizedRoot) : absolutePath,
       name,
       content,
-      language: getLanguageByExtension(name)
+      language: getLanguageByExtension(name),
+      action: 'create_or_modify'
+    });
+  });
+
+  Array.from(responseText.matchAll(deleteDirectiveRegex)).forEach((match) => {
+    const candidatePath = sanitizeAiCandidatePath((match[1] || '').trim());
+    if (!candidatePath) return;
+    const absolutePath = resolveAiCandidatePath(candidatePath, preferredTargets, normalizedRoot, files, activeFile);
+    const name = absolutePath.split('/').pop() || candidatePath;
+    found.set(absolutePath, {
+      absolutePath,
+      relativePath: normalizedRoot ? getRelativeFilePath(absolutePath, normalizedRoot) : absolutePath,
+      name,
+      content: '',
+      language: getLanguageByExtension(name),
+      action: 'delete'
     });
   });
 

@@ -2,6 +2,13 @@
 
 Log rekam jejak historis pengembangan fitur pada AURA AI IDE.
 
+## [2026-04-14] - Agentic Chat Revision Workflow (v15.3.167)
+- **Direct Edit Mode**: AURA sekarang lebih tegas membaca prompt chat revisi sebagai instruksi untuk benar-benar mengedit workspace aktif, bukan sekadar memberi rencana.
+- **Recovery Pass**: Jika model pertama hanya mengembalikan prose atau planning tanpa file perubahan, AURA otomatis menjalankan formatter recovery agar respons dikonversi menjadi file changes yang bisa langsung diterapkan.
+- **Safer Auto-Apply**: Revisi yang fokus dan tidak menyentuh area sensitif kini lebih mudah langsung diterapkan, sehingga pengalaman edit via chat terasa lebih dekat ke editor AI yang agentic.
+- **Delete Support**: Parser workspace kini mendukung operasi `Delete File: ...`, sehingga prompt chat dapat menambah, mengubah, maupun menghapus file dengan alur yang lebih konsisten.
+- **Verification**: Build produksi AURA lulus setelah hardening mode revisi dan blank-preview recovery diterapkan.
+
 ## [2026-04-10] - Tailwind Website Generation Hardening (v15.3.159)
 - **Generator Guardrails**: Menambahkan aturan prompt baru agar AURA tidak lagi mengarang utility Tailwind invalid seperti `text-text`, `bg-text`, atau token yang tidak benar-benar didefinisikan.
 - **CSS Sanitization**: Memperkeras normalisasi `src/index.css` agar blok scaffold duplikat seperti `@layer base`, `@theme`, dan `@keyframes` yang bentrok tidak ikut lolos ke workspace hasil generate.
