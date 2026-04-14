@@ -8,6 +8,12 @@ Log rekam jejak historis pengembangan fitur pada AURA AI IDE.
 - **Recovery Quality**: Jalur ekstraksi file AI kini lebih aman untuk kasus website/full app yang sebelumnya bisa menghasilkan Tailwind overlay error saat preview atau build.
 - **Verification**: Build AURA dan simulasi end-to-end generator website lulus setelah patch diterapkan.
 
+## [2026-04-14] - Minimal AI Composer Panel (v15.3.166)
+- **Right Panel Cleanup**: Panel kanan AI Composer sekarang jauh lebih ringkas agar percakapan dan prompt tetap terlihat jelas saat user meminta revisi.
+- **Removed Noise**: Blok `Context Ringkas`, kartu progres besar, label pesan berulang, helper text yang tidak penting, dan status sukses/idle yang memenuhi layar sudah dihilangkan.
+- **Focus On Chat**: Panel kanan kini memprioritaskan isi chat, attachment, input prompt, serta kontrol inti seperti send, stop, dan attach.
+- **Verification**: Build produksi AURA lulus setelah perapihan UI panel kanan diterapkan.
+
 ## [2026-04-14] - PostCSS Tailwind Config Recovery (v15.3.165)
 - **PostCSS Recovery**: AURA sekarang lebih agresif mengganti `postcss.config.js` yang ambigu atau gaya lama dengan baseline valid berbasis `@tailwindcss/postcss` dan `autoprefixer`.
 - **ENOENT Prevention**: Patch ini mencegah error seperti `ENOENT: no such file or directory, open '.../tailwindcss'` yang sebelumnya muncul ketika generator menulis config PostCSS lama atau salah format.

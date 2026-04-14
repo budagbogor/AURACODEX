@@ -99,10 +99,6 @@ export function AiComposerPanel({
 }: Props) {
   const providerName = providerOptions.find((item) => item.id === provider)?.name || provider;
   const modelName = modelOptions.find((item) => item.id === activeModel)?.name || activeModel;
-  const compactWorkflow = activeSkill?.workflow?.slice(0, 2) || [];
-  const visibleProcessingSteps = processingEntry?.steps?.filter((step) => step.status === 'planning' || step.status === 'working').slice(-3) || [];
-  const processingTitle = processingEntry?.title || 'AURA sedang bekerja';
-  const processingSummary = processingEntry?.summary || 'Menganalisis prompt, menyusun perubahan, dan menulis file ke workspace.';
 
   return (
     <aside
@@ -155,7 +151,7 @@ export function AiComposerPanel({
                   </option>
                 ))}
               </select>
-              <span className="truncate text-[#727b88]">{selectedSkill}</span>
+              <span className="truncate text-[#727b88]">{taskPreset.label}</span>
             </div>
             {fastFixMode ? (
               <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-100">
@@ -164,99 +160,19 @@ export function AiComposerPanel({
               </div>
             ) : null}
           </div>
-          <div className={`rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] ${
-            testingStatus === 'success'
-              ? 'bg-emerald-500/10 text-emerald-200'
-              : testingStatus === 'error'
-                ? 'bg-red-500/10 text-red-200'
-                : testingStatus === 'loading'
-                  ? 'bg-amber-500/10 text-amber-200'
-                  : 'bg-white/5 text-[#98a0ad]'
-          }`}>
-            {testingStatus || 'idle'}
-          </div>
+          {testingStatus === 'error' ? (
+            <div className="rounded-full bg-red-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-red-200">
+              Error
+            </div>
+          ) : null}
         </div>
 
-        <details className="mt-2 rounded-lg border border-white/6 bg-white/[0.02] px-2.5 py-2">
-          <summary className="cursor-pointer list-none text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7f8795]">
-            Context Ringkas
-          </summary>
-          <div className="mt-2 space-y-2 text-[11px] text-[#a8b0bc]">
-            {domainFocus.length > 0 ? (
-              <div>
-                <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#6f7785]">Domain</div>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {domainFocus.map((domain) => (
-                    <span key={domain} className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[10px] text-blue-100">
-                      {domain}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {preferredTargets.length > 0 ? (
-              <div>
-                <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#6f7785]">Targets</div>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {preferredTargets.slice(0, 5).map((target) => (
-                    <span key={target} className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-100">
-                      {target}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {compactWorkflow.length > 0 ? (
-              <div>
-                <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#6f7785]">Workflow</div>
-                <div className="mt-1 space-y-1">
-                  {compactWorkflow.map((item) => (
-                    <div key={item} className="leading-5 text-[#96a0ad]">{item}</div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </details>
-
         {isAiLoading ? (
-          <div className="mt-2 rounded-lg border border-blue-500/15 bg-blue-500/[0.07] px-3 py-2.5">
+          <div className="mt-2 rounded-lg border border-blue-500/15 bg-blue-500/[0.07] px-3 py-2">
             <div className="flex items-center gap-2 text-[11px] text-blue-100">
               <LoaderCircle size={13} className="animate-spin text-blue-300" />
-              <span className="font-semibold">{processingTitle}</span>
-              <div className="ml-auto flex items-center gap-1">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-300 [animation-delay:-0.2s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-300 [animation-delay:-0.1s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-300" />
-              </div>
+              <span className="font-semibold">AURA sedang menjalankan prompt...</span>
             </div>
-            <div className="mt-1.5 text-[10px] leading-5 text-[#c9d7f2]">
-              {processingSummary}
-            </div>
-            <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/8">
-              <div className="h-full w-2/5 animate-pulse rounded-full bg-blue-400/80" />
-            </div>
-            {visibleProcessingSteps.length > 0 ? (
-              <div className="mt-2 space-y-1.5">
-                {visibleProcessingSteps.map((step) => (
-                  <div key={step.label} className="rounded-md border border-white/6 bg-black/10 px-2 py-1.5">
-                    <div className="text-[10px] font-medium text-white">{step.label}</div>
-                    <div className="text-[10px] leading-4 text-[#aebcda]">{step.detail}</div>
-                  </div>
-                ))}
-              </div>
-            ) : processingEntry?.files?.length ? (
-              <div className="mt-2 text-[10px] leading-5 text-[#aebcda]">
-                Menyiapkan {processingEntry.files.slice(0, 3).join(', ')}
-                {processingEntry.files.length > 3 ? ` +${processingEntry.files.length - 3} file lain` : ''}
-              </div>
-            ) : (
-              <div className="mt-2 text-[10px] leading-5 text-[#aebcda]">
-                AURA sedang memikirkan perubahan terbaik untuk workspace ini.
-              </div>
-            )}
           </div>
         ) : null}
       </div>
@@ -265,7 +181,7 @@ export function AiComposerPanel({
         {chatMessages.length === 0 ? (
           <div className="rounded-lg border border-white/8 bg-white/[0.02] p-3 text-[11px] leading-5 text-[#9098a5]">
             Tulis instruksi kerja di sini.
-            <div className="mt-1 text-[#727b88]">Planning tetap di chat kanan, hasil coding tampil di panel tengah.</div>
+            <div className="mt-1 text-[#727b88]">Hasil perubahan akan muncul di panel tengah.</div>
           </div>
         ) : (
           <div className="space-y-2">
@@ -278,9 +194,6 @@ export function AiComposerPanel({
                     : 'mr-8 border border-white/10 bg-white/5 text-[#d4d4d4]'
                 }`}
               >
-                <div className="mb-1 text-[10px] font-medium text-[#8a8a8a]">
-                  {message.role === 'user' ? 'You' : `AURA - ${provider}`}
-                </div>
                 <div>{message.content}</div>
               </div>
             ))}
@@ -320,32 +233,9 @@ export function AiComposerPanel({
           onKeyDown={onTextareaKeyDown}
           onPaste={(event) => void onTextareaPaste(event)}
           placeholder="Tulis prompt AI di sini..."
-          className="min-h-[88px] w-full resize-none rounded-lg border border-white/10 bg-[#0f0f0f] px-3 py-2.5 text-[12px] text-white outline-none transition-colors placeholder:text-[#666] focus:border-blue-500/40"
+          className="min-h-[72px] w-full resize-none rounded-lg border border-white/10 bg-[#0f0f0f] px-3 py-2.5 text-[12px] text-white outline-none transition-colors placeholder:text-[#666] focus:border-blue-500/40"
         />
-        <div className="mt-1 text-[10px] text-[#6f7785]">
-          Tempel screenshot langsung dengan `Ctrl+V`, atau pakai tombol Attach.
-        </div>
-        {isAiLoading ? (
-          <div className="mt-2 rounded-lg border border-blue-500/15 bg-blue-500/[0.06] px-3 py-2 text-[10px] text-[#cfe0ff]">
-            <div className="flex items-center gap-2">
-              <LoaderCircle size={12} className="animate-spin text-blue-300" />
-              <span className="font-medium">AURA sedang memproses prompt dan menyiapkan perubahan.</span>
-            </div>
-          </div>
-        ) : null}
         <div className="mt-2.5 flex items-center justify-between gap-3">
-          <select
-            value={taskPreset.id}
-            onChange={(event) => onChangeTaskPreset(event.target.value)}
-            className="rounded-full border border-white/8 bg-white/[0.03] px-2 py-0.5 text-[10px] text-[#8b93a0] outline-none focus:border-blue-500/40"
-            title="AI task mode"
-          >
-            {taskPresetOptions.map((preset) => (
-              <option key={preset.id} value={preset.id}>
-                {preset.label}
-              </option>
-            ))}
-          </select>
           <div className="flex items-center gap-2">
             <button
               onClick={onOpenAttach}
@@ -375,6 +265,9 @@ export function AiComposerPanel({
               </button>
             )}
           </div>
+          {testingStatus === 'error' ? (
+            <div className="text-[10px] text-red-300">Provider error. Cek settings.</div>
+          ) : null}
         </div>
       </div>
     </aside>
