@@ -8,6 +8,12 @@ Log rekam jejak historis pengembangan fitur pada AURA AI IDE.
 - **Recovery Quality**: Jalur ekstraksi file AI kini lebih aman untuk kasus website/full app yang sebelumnya bisa menghasilkan Tailwind overlay error saat preview atau build.
 - **Verification**: Build AURA dan simulasi end-to-end generator website lulus setelah patch diterapkan.
 
+## [2026-04-14] - PostCSS Tailwind Config Recovery (v15.3.165)
+- **PostCSS Recovery**: AURA sekarang lebih agresif mengganti `postcss.config.js` yang ambigu atau gaya lama dengan baseline valid berbasis `@tailwindcss/postcss` dan `autoprefixer`.
+- **ENOENT Prevention**: Patch ini mencegah error seperti `ENOENT: no such file or directory, open '.../tailwindcss'` yang sebelumnya muncul ketika generator menulis config PostCSS lama atau salah format.
+- **Prompt Guardrails**: Instruksi generator dipertegas agar model tidak lagi menulis `require('tailwindcss')`, `from "tailwindcss"`, atau string plugin `tailwindcss` di PostCSS config.
+- **Verification**: Build produksi AURA lulus setelah patch diterapkan.
+
 ## [2026-04-13] - Tailwind Button Alias Recovery (v15.3.164)
 - **Button Alias Recovery**: AURA sekarang membuang helper class semu seperti `btn`, `btn-primary`, `btn-secondary`, `btn-outline`, dan `button` jika sempat muncul di blok `@apply`.
 - **Build Protection**: Sanitasi ini mencegah error Tailwind `Cannot apply unknown utility class 'btn'` saat web app baru dibangun atau dipreview.

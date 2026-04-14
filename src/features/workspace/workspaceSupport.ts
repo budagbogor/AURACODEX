@@ -1829,11 +1829,14 @@ const ensureTailwindEntrypoints = (
   });
 
   ensureFile('postcss.config.js', (existing) => {
-    if (existing && /(?:tailwindcss\s*:|require\(['"]tailwindcss['"]\)|from\s+['"]tailwindcss['"]|plugins\s*:\s*\[[^\]]*tailwindcss)/i.test(existing)) {
+    const hasLegacyTailwindPostCssConfig = existing && /(?:tailwindcss\s*:|require\(['"]tailwindcss['"]\)|from\s+['"]tailwindcss['"]|plugins\s*:\s*\[[^\]]*tailwindcss|plugins\s*:\s*\[[^\]]*['"]tailwindcss['"])/i.test(existing);
+    const hasSafeTailwindPostCssConfig = existing && /@tailwindcss\/postcss/i.test(existing) && /autoprefixer/i.test(existing);
+
+    if (hasLegacyTailwindPostCssConfig) {
       return buildDefaultPostCssConfig();
     }
 
-    if (existing && /@tailwindcss\/postcss|autoprefixer/i.test(existing)) {
+    if (hasSafeTailwindPostCssConfig) {
       return existing;
     }
 

@@ -193,6 +193,7 @@ export const buildTailwindUiContract = () => [
   '- Gunakan utility class secara disiplin dengan struktur yang terbaca. Jangan membuat class soup acak tanpa grouping yang jelas.',
   '- Gunakan token warna, spacing, radius, shadow, dan typography secara konsisten melalui kombinasi utility yang stabil.',
   '- Jangan mengarang utility alias yang tidak didefinisikan, seperti text-text, bg-text, atau border-bg. Gunakan utility Tailwind bawaan atau token AURA yang benar-benar ada.',
+  '- Jika proyek memakai postcss.config.js, gunakan @tailwindcss/postcss dan autoprefixer. Hindari konfigurasi lama seperti require("tailwindcss"), from "tailwindcss", atau plugins: ["tailwindcss"].',
   '- Jangan memakai helper class semu seperti btn, btn-primary, btn-secondary, atau button di dalam @apply karena itu bukan utility Tailwind bawaan.',
   '- Jika ada pola yang berulang, ekstrak ke komponen atau helper class yang masuk akal daripada mengulang blok utility yang kacau.',
   '- Jangan mencampur Tailwind dengan file CSS besar yang redundant kecuali benar-benar dibutuhkan untuk base layer atau animation khusus.',
