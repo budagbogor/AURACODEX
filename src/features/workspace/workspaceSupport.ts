@@ -1466,7 +1466,8 @@ const ensureTailwindEntrypoints = (
       relativePath: normalizedRelativePath,
       name: normalizedRelativePath.split('/').pop() || normalizedRelativePath,
       content: nextContent,
-      language: getLanguageByExtension(normalizedRelativePath)
+      language: getLanguageByExtension(normalizedRelativePath),
+      action: 'create_or_modify'
     });
   };
 
@@ -2009,7 +2010,8 @@ const ensureDeterministicFrontendScaffold = (
       relativePath: normalizedRelativePath,
       name: normalizedRelativePath.split('/').pop() || normalizedRelativePath,
       content,
-      language: language || getLanguageByExtension(normalizedRelativePath)
+      language: language || getLanguageByExtension(normalizedRelativePath),
+      action: 'create_or_modify'
     });
   };
 
@@ -2133,6 +2135,7 @@ const ensureDeterministicMobileScaffold = (
       relativePath: 'capacitor.config.ts',
       name: 'capacitor.config.ts',
       language: 'typescript',
+      action: 'create_or_modify',
       content: [
         "import type { CapacitorConfig } from '@capacitor/cli';",
         '',
@@ -2436,7 +2439,8 @@ const ensureMissingRelativeComponentStubs = (
       relativePath,
       name: getBaseName(relativePath),
       content,
-      language: getLanguageByExtension(relativePath)
+      language: getLanguageByExtension(relativePath),
+      action: 'create_or_modify'
     });
   });
 
@@ -2480,6 +2484,14 @@ export const normalizeGeneratedFrontendFiles = (
   );
   const generatedRelativePaths = new Set(relocatedFiles.map((file) => normalizePath(file.relativePath)));
   const knownRelativePaths = new Set([...workspaceRelativePaths, ...generatedRelativePaths]);
+  const existingMatchCount = relocatedFiles.filter((file) =>
+    file.action === 'delete' || workspaceRelativePaths.has(normalizePath(file.relativePath))
+  ).length;
+  const preserveFocusedRevision =
+    workspaceFiles.length > 0 &&
+    relocatedFiles.length > 0 &&
+    relocatedFiles.length <= 4 &&
+    existingMatchCount === relocatedFiles.length;
 
   const normalizedFiles = relocatedFiles.map((generatedFile) => {
     const extension = getExtension(generatedFile.relativePath);
@@ -2543,6 +2555,10 @@ export const normalizeGeneratedFrontendFiles = (
           content: nextContent
         };
   });
+
+  if (preserveFocusedRevision) {
+    return normalizedFiles;
+  }
 
   const withDeterministicScaffold = ensureDeterministicFrontendScaffold(normalizedFiles, workspaceFiles, rootPath);
   const withDeterministicMobileScaffold = ensureDeterministicMobileScaffold(withDeterministicScaffold, workspaceFiles, rootPath);
